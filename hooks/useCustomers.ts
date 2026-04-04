@@ -26,11 +26,11 @@ export const useCustomers = () => {
     fetchCustomers();
   }, []);
 
-  const createCustomer = async (customer: Omit<Customer, 'id' | 'createdAt' | 'totalDebt'>) => {
+  const createCustomer = async (customer: Omit<Customer, 'id' | 'createdAt' | 'totalDebt' | 'totalSpent'>) => {
     try {
       setError(null);
       const id = await customerService.create(customer);
-      const newCustomer = { ...customer, id, totalDebt: 0, createdAt: new Date() };
+      const newCustomer = { ...customer, id, totalDebt: 0, totalSpent: 0, createdAt: new Date() };
       setCustomers([...customers, newCustomer]);
       return id;
     } catch (err) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -11,15 +11,28 @@ interface CustomerFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (customer: Omit<Customer, 'id' | 'createdAt' | 'totalDebt' | 'totalSpent'>) => Promise<void>;
+  initialData?: Customer | null;
 }
 
-export const CustomerForm = ({ isOpen, onClose, onSubmit }: CustomerFormProps) => {
+export const CustomerForm = ({ isOpen, onClose, onSubmit, initialData }: CustomerFormProps) => {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name,
+        phone: initialData.phone || '',
+      });
+    } else {
+      setFormData({ name: '', phone: '' });
+    }
+    setErrors({});
+  }, [initialData, isOpen]);
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -49,18 +62,18 @@ export const CustomerForm = ({ isOpen, onClose, onSubmit }: CustomerFormProps) =
         name: formData.name,
         phone: formData.phone || undefined,
       });
-
-      setFormData({ name: '', phone: '' });
       onClose();
     } finally {
       setIsLoading(false);
     }
   };
 
+  const isEditing = !!initialData;
+
   return (
     <Modal
       isOpen={isOpen}
-      title="Nuevo Cliente"
+      title={isEditing ? 'Editar Cliente' : 'Nuevo Cliente'}
       onClose={onClose}
       actions={
         <>
@@ -68,17 +81,21 @@ export const CustomerForm = ({ isOpen, onClose, onSubmit }: CustomerFormProps) =
             Cancelar
           </Button>
           <Button variant="primary" loading={isLoading} onClick={handleSubmit} className="rounded-xl px-10 font-black">
-            REGISTRAR
+            {isEditing ? 'GUARDAR' : 'REGISTRAR'}
           </Button>
         </>
       }
     >
       <div className="space-y-6 py-2">
-        <div className="bg-blue-50 p-4 rounded-2xl flex items-center gap-3 border border-blue-100">
-          <span className="text-2xl">👤</span>
+        <div className={`p-4 rounded-2xl flex items-center gap-3 border ${isEditing ? 'bg-amber-50 border-amber-100' : 'bg-blue-50 border-blue-100'}`}>
+          <span className="text-2xl">{isEditing ? '✏️' : '👤'}</span>
           <div>
-            <p className="text-sm font-black text-blue-900 uppercase tracking-tight">Registro de Cliente</p>
-            <p className="text-xs text-blue-600 font-medium">Lleva el control de sus pagos y consumos</p>
+            <p className={`text-sm font-black uppercase tracking-tight ${isEditing ? 'text-amber-900' : 'text-blue-900'}`}>
+              {isEditing ? 'Editando Cliente' : 'Registro de Cliente'}
+            </p>
+            <p className={`text-xs font-medium ${isEditing ? 'text-amber-600' : 'text-blue-600'}`}>
+              {isEditing ? 'Modifica los datos del cliente' : 'Lleva el control de sus pagos y consumos'}
+            </p>
           </div>
         </div>
 
@@ -89,7 +106,6 @@ export const CustomerForm = ({ isOpen, onClose, onSubmit }: CustomerFormProps) =
           error={errors.name}
           placeholder="Ej: Juan Pérez"
           fullWidth
-          className="h-14 rounded-2xl border-2 border-gray-100 font-bold"
         />
         <Input
           label="Teléfono / WhatsApp"
@@ -98,7 +114,6 @@ export const CustomerForm = ({ isOpen, onClose, onSubmit }: CustomerFormProps) =
           error={errors.phone}
           placeholder="Ej: 3001234567"
           fullWidth
-          className="h-14 rounded-2xl border-2 border-gray-100 font-bold"
         />
       </div>
     </Modal>

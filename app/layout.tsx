@@ -24,11 +24,11 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className="bg-gray-50">
+      <body className="bg-gray-50 min-h-screen">
         <Navbar />
         <div className="flex">
           <Sidebar />
-          <main className="flex-1 p-6 max-w-7xl mx-auto">
+          <main className="flex-1 p-3 sm:p-6 max-w-7xl mx-auto w-full min-h-screen">
             {children}
           </main>
         </div>

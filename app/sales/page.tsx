@@ -66,14 +66,19 @@ export default function SalesPage() {
   };
 
   if (loadingProducts) {
-    return <div className="text-center py-12">Cargando...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-gray-400 font-bold animate-pulse">Cargando productos...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-20 lg:pb-0">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Venta Principal (POS)</h1>
-        <p className="text-gray-600">Realiza ventas rápidas y eficientes</p>
+        <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">Venta Principal</h1>
+        <p className="text-gray-500 font-medium text-sm">Realiza ventas rápidas y eficientes</p>
       </div>
 
       {alert && (
