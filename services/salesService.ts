@@ -8,6 +8,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Sale } from '@/types';
+import { productService } from './productService';
 
 const COLLECTION = 'sales';
 
@@ -55,6 +56,15 @@ export const salesService = {
   },
 
   async create(sale: Omit<Sale, 'id'>): Promise<string> {
+    // Decrement stock for each item
+    for (const item of sale.items) {
+      if (item.type === 'product' && item.productId) {
+        await productService.decrementStock(item.productId, item.quantity);
+      }
+      // If it's a promotion, we should ideally decrement stock for products in the promotion
+      // But let's keep it simple for now as we don't have promotion details here
+    }
+
     const docRef = await addDoc(collection(db, COLLECTION), {
       ...sale,
       date: new Date(),

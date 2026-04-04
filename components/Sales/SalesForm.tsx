@@ -142,105 +142,156 @@ export const SalesForm = ({
   };
 
   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const [activeTab, setActiveTab] = useState<'products' | 'cart'>('products');
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Products and Promotions */}
-      <div className="lg:col-span-2 space-y-4">
-        {alert && (
-          <Alert
-            type={alert.type}
-            message={alert.message}
-            onClose={() => setAlert(null)}
-          />
-        )}
+    <div className="flex flex-col gap-4 pb-20 lg:pb-0">
+      {/* Mobile Tabs */}
+      <div className="flex lg:hidden bg-white rounded-lg p-1 shadow-sm border border-gray-200">
+        <button
+          onClick={() => setActiveTab('products')}
+          className={`flex-1 py-3 text-sm font-bold rounded-md transition-all ${
+            activeTab === 'products' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500'
+          }`}
+        >
+          🛍️ Productos
+        </button>
+        <button
+          onClick={() => setActiveTab('cart')}
+          className={`flex-1 py-3 text-sm font-bold rounded-md transition-all relative ${
+            activeTab === 'cart' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500'
+          }`}
+        >
+          🛒 Carrito
+          {cartItems.length > 0 && (
+            <span className="absolute top-2 right-4 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-white animate-pulse">
+              {cartItems.length}
+            </span>
+          )}
+        </button>
+      </div>
 
-        {/* Products */}
-        <Card title="Productos">
-          <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-            {products.filter(p => p.stock > 0).map(product => (
-              <Button
-                key={product.id}
-                variant="secondary"
-                onClick={() => handleAddProduct(product)}
-                className="text-left flex-col items-start h-auto py-2"
-              >
-                <span className="font-medium">{product.name}</span>
-                <span className="text-sm opacity-75">
-                  {formatCurrency(product.price)} ({product.stock} stock)
-                </span>
-              </Button>
-            ))}
-          </div>
-        </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Products and Promotions */}
+        <div className={`lg:col-span-2 space-y-4 ${activeTab === 'cart' ? 'hidden lg:block' : 'block'}`}>
+          {alert && (
+            <Alert
+              type={alert.type}
+              message={alert.message}
+              onClose={() => setAlert(null)}
+            />
+          )}
 
-        {/* Promotions */}
-        {promotions.length > 0 && (
-          <Card title="Promociones">
-            <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-              {promotions.map(promotion => (
-                <Button
-                  key={promotion.id}
-                  variant="success"
-                  onClick={() => handleAddPromotion(promotion)}
-                  className="text-left flex-col items-start h-auto py-2"
+          {/* Products */}
+          <Card title="Productos Disponibles">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] lg:max-h-[70vh] overflow-y-auto pr-1">
+              {products.filter(p => !p.stock || p.stock > 0).map(product => (
+                <button
+                  key={product.id}
+                  onClick={() => handleAddProduct(product)}
+                  className="flex items-center justify-between p-4 bg-white border-2 border-gray-100 rounded-xl hover:border-blue-500 active:scale-95 transition-all text-left group shadow-sm hover:shadow-md"
                 >
-                  <span className="font-medium">{promotion.name}</span>
-                  <span className="text-sm opacity-75">
-                    {formatCurrency(promotion.finalPrice)}
-                  </span>
-                </Button>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-gray-900 truncate group-hover:text-blue-600">
+                      {product.name}
+                    </div>
+                    <div className="text-sm text-gray-500 mt-1 flex items-center">
+                      <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-bold mr-2">
+                        {formatCurrency(product.price)}
+                      </span>
+                      {product.stock !== undefined && (
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                          product.stock > 10 ? 'bg-green-50 text-green-700' : 'bg-orange-50 text-orange-700'
+                        }`}>
+                          {product.stock} en stock
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="ml-4 bg-blue-100 p-2 rounded-lg text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                  </div>
+                </button>
               ))}
             </div>
           </Card>
-        )}
-      </div>
 
-      {/* Sidebar */}
-      <div className="space-y-4">
-        {/* Customer */}
-        <Card title="Cliente">
-          <CustomerSelector
-            customers={customers}
-            selectedCustomer={selectedCustomer}
-            onSelect={setSelectedCustomer}
-            onCreateNew={onCreateCustomer}
-          />
-        </Card>
+          {/* Promotions */}
+          {promotions.length > 0 && (
+            <Card title="Promociones">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-64 overflow-y-auto pr-1">
+                {promotions.map(promotion => (
+                  <button
+                    key={promotion.id}
+                    onClick={() => handleAddPromotion(promotion)}
+                    className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-100 rounded-xl hover:border-purple-500 active:scale-95 transition-all text-left shadow-sm group"
+                  >
+                    <div>
+                      <div className="font-bold text-purple-900 group-hover:text-purple-600">{promotion.name}</div>
+                      <div className="text-sm font-bold text-purple-700 mt-1">{formatCurrency(promotion.finalPrice)}</div>
+                    </div>
+                    <div className="bg-purple-200 p-2 rounded-lg text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                      <span className="text-xl">✨</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </Card>
+          )}
+        </div>
 
-        {/* Cart */}
-        <Card title="Carrito">
-          <Cart
-            items={cartItems}
-            onRemove={removeCartItem}
-            onQuantityChange={updateCartItem}
-          />
-        </Card>
+        {/* Sidebar / Cart View */}
+        <div className={`space-y-4 ${activeTab === 'products' ? 'hidden lg:block' : 'block'}`}>
+          {/* Customer */}
+          <Card title="Cliente">
+            <CustomerSelector
+              customers={customers}
+              selectedCustomer={selectedCustomer}
+              onSelect={setSelectedCustomer}
+              onCreateNew={onCreateCustomer}
+            />
+          </Card>
 
-        {/* Payment */}
-        <Card title="Pago">
-          <PaymentMethod
-            onMethodSelect={(method, date) => {
-              setPaymentMethod(method);
-              setDueDate(date);
-            }}
-          />
-        </Card>
+          {/* Cart */}
+          <Card title="Carrito de Compras">
+            <Cart
+              items={cartItems}
+              onRemove={removeCartItem}
+              onQuantityChange={updateCartItem}
+            />
+          </Card>
 
-        {/* Total and Button */}
-        <div className="bg-blue-50 p-4 rounded border border-blue-200">
-          <div className="text-2xl font-bold text-blue-600 mb-4">
-            {formatCurrency(total)}
+          {/* Payment */}
+          <Card title="Método de Pago">
+            <PaymentMethod
+              onMethodSelect={(method, date) => {
+                setPaymentMethod(method);
+                setDueDate(date);
+              }}
+            />
+          </Card>
+
+          {/* Total and Button */}
+          <div className="sticky bottom-20 lg:bottom-4 bg-blue-600 p-6 rounded-2xl shadow-2xl text-white transform transition-all">
+            <div className="flex justify-between items-center mb-6 border-b border-blue-400 pb-4">
+              <span className="text-blue-100 font-medium">Total a Pagar</span>
+              <div className="text-3xl font-black">
+                {formatCurrency(total)}
+              </div>
+            </div>
+            <Button
+              variant="secondary"
+              fullWidth
+              loading={isLoading}
+              onClick={handleCompletePayment}
+              disabled={cartItems.length === 0}
+              className="py-4 text-lg font-bold bg-white text-blue-700 hover:bg-blue-50 border-none shadow-lg active:translate-y-1 transition-all"
+            >
+              🚀 Finalizar Venta
+            </Button>
           </div>
-          <Button
-            variant="primary"
-            fullWidth
-            loading={isLoading}
-            onClick={handleCompletePayment}
-            disabled={cartItems.length === 0}
-          >
-            Completar Venta
-          </Button>
         </div>
       </div>
     </div>
