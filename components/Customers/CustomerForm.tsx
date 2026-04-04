@@ -10,7 +10,7 @@ import { validators } from '@/lib/validators';
 interface CustomerFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (customer: Omit<Customer, 'id' | 'createdAt' | 'totalDebt'>) => Promise<void>;
+  onSubmit: (customer: Omit<Customer, 'id' | 'createdAt' | 'totalDebt' | 'totalSpent'>) => Promise<void>;
 }
 
 export const CustomerForm = ({ isOpen, onClose, onSubmit }: CustomerFormProps) => {
@@ -60,35 +60,45 @@ export const CustomerForm = ({ isOpen, onClose, onSubmit }: CustomerFormProps) =
   return (
     <Modal
       isOpen={isOpen}
-      title="Crear Cliente"
+      title="Nuevo Cliente"
       onClose={onClose}
       actions={
         <>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} className="rounded-xl">
             Cancelar
           </Button>
-          <Button variant="primary" loading={isLoading} onClick={handleSubmit}>
-            Crear
+          <Button variant="primary" loading={isLoading} onClick={handleSubmit} className="rounded-xl px-10 font-black">
+            REGISTRAR
           </Button>
         </>
       }
     >
-      <div className="space-y-3">
+      <div className="space-y-6 py-2">
+        <div className="bg-blue-50 p-4 rounded-2xl flex items-center gap-3 border border-blue-100">
+          <span className="text-2xl">👤</span>
+          <div>
+            <p className="text-sm font-black text-blue-900 uppercase tracking-tight">Registro de Cliente</p>
+            <p className="text-xs text-blue-600 font-medium">Lleva el control de sus pagos y consumos</p>
+          </div>
+        </div>
+
         <Input
-          label="Nombre*"
+          label="Nombre Completo*"
           value={formData.name}
           onChange={e => handleChange('name', e.target.value)}
           error={errors.name}
           placeholder="Ej: Juan Pérez"
           fullWidth
+          className="h-14 rounded-2xl border-2 border-gray-100 font-bold"
         />
         <Input
-          label="Teléfono"
+          label="Teléfono / WhatsApp"
           value={formData.phone}
           onChange={e => handleChange('phone', e.target.value)}
           error={errors.phone}
           placeholder="Ej: 3001234567"
           fullWidth
+          className="h-14 rounded-2xl border-2 border-gray-100 font-bold"
         />
       </div>
     </Modal>
