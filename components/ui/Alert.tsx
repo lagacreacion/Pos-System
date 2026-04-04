@@ -2,9 +2,10 @@ interface AlertProps {
   type: 'success' | 'error' | 'warning' | 'info';
   message: string;
   onClose?: () => void;
+  className?: string;
 }
 
-export const Alert = ({ type, message, onClose }: AlertProps) => {
+export const Alert = ({ type, message, onClose, className = '' }: AlertProps) => {
   const styles = {
     success: 'bg-green-100 text-green-800 border-green-300',
     error: 'bg-red-100 text-red-800 border-red-300',
@@ -13,7 +14,7 @@ export const Alert = ({ type, message, onClose }: AlertProps) => {
   };
 
   return (
-    <div className={`border rounded p-4 flex justify-between items-center ${styles[type]}`}>
+    <div className={`border rounded p-4 flex justify-between items-center ${styles[type]} ${className}`}>
       <span>{message}</span>
       {onClose && (
         <button

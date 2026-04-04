@@ -12,6 +12,7 @@ export interface Customer {
   name: string;
   phone?: string;
   totalDebt: number;
+  totalSpent: number;
   createdAt: Date;
 }
 

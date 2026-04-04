@@ -9,6 +9,7 @@ import {
 import { db } from '@/lib/firebase';
 import { Sale } from '@/types';
 import { productService } from './productService';
+import { customerService } from './customerService';
 
 const COLLECTION = 'sales';
 
@@ -63,6 +64,11 @@ export const salesService = {
       }
       // If it's a promotion, we should ideally decrement stock for products in the promotion
       // But let's keep it simple for now as we don't have promotion details here
+    }
+
+    // Update customer total spent
+    if (sale.customerId) {
+      await customerService.updateSpent(sale.customerId, sale.totalAmount);
     }
 
     const docRef = await addDoc(collection(db, COLLECTION), {

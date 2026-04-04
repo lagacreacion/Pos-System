@@ -35,10 +35,11 @@ export const customerService = {
     } as Customer;
   },
 
-  async create(customer: Omit<Customer, 'id' | 'createdAt' | 'totalDebt'>): Promise<string> {
+  async create(customer: Omit<Customer, 'id' | 'createdAt' | 'totalDebt' | 'totalSpent'>): Promise<string> {
     const docRef = await addDoc(collection(db, COLLECTION), {
       ...customer,
       totalDebt: 0,
+      totalSpent: 0,
       createdAt: new Date(),
     });
     return docRef.id;
@@ -52,6 +53,16 @@ export const customerService = {
   async delete(id: string): Promise<void> {
     const docRef = doc(db, COLLECTION, id);
     await deleteDoc(docRef);
+  },
+
+  async updateSpent(id: string, amount: number): Promise<void> {
+    const customer = await this.getById(id);
+    if (!customer) return;
+
+    const docRef = doc(db, COLLECTION, id);
+    await updateDoc(docRef, {
+      totalSpent: (customer.totalSpent || 0) + amount,
+    });
   },
 
   async updateDebt(id: string, amount: number): Promise<void> {
