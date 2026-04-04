@@ -5,10 +5,9 @@ import { Input } from '@/components/ui/Input';
 
 interface PaymentMethodProps {
   onMethodSelect: (method: 'cash' | 'transfer' | 'credit', dueDate?: Date) => void;
-  total: number;
 }
 
-export const PaymentMethod = ({ onMethodSelect, total }: PaymentMethodProps) => {
+export const PaymentMethod = ({ onMethodSelect }: PaymentMethodProps) => {
   const [selectedMethod, setSelectedMethod] = useState<'cash' | 'transfer' | 'credit' | null>(null);
   const [dueDate, setDueDate] = useState('');
 

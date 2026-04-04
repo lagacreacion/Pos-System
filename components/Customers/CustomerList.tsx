@@ -2,7 +2,7 @@
 
 import { Customer } from '@/types';
 import { Button } from '@/components/ui/Button';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 
 interface CustomerListProps {
   customers: Customer[];

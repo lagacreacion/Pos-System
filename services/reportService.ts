@@ -1,7 +1,6 @@
 import { salesService } from './salesService';
-import { debtService } from './debtService';
 import { customerService } from './customerService';
-import { Sale, Debt, DailyReport, MonthlyReport, Analytics } from '@/types';
+import { DailyReport, MonthlyReport, Analytics } from '@/types';
 import { format, startOfDay, endOfDay, startOfMonth, endOfMonth } from 'date-fns';
 
 export const reportService = {
@@ -10,7 +9,6 @@ export const reportService = {
     const endDate = endOfDay(date);
 
     const sales = await salesService.getByDateRange(startDate, endDate);
-    const debts = await debtService.getPending();
 
     const totalSold = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
     const totalCollected = sales

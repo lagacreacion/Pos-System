@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { DailyReport, MonthlyReport, Analytics } from '@/types';
 import { reportService } from '@/services/reportService';
 
 export const useReports = () => {

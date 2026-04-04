@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Product, Promotion, CartItem, Customer } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -220,7 +220,6 @@ export const SalesForm = ({
         {/* Payment */}
         <Card title="Pago">
           <PaymentMethod
-            total={total}
             onMethodSelect={(method, date) => {
               setPaymentMethod(method);
               setDueDate(date);

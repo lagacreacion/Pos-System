@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Alert } from '@/components/ui/Alert';
 import { SalesForm } from '@/components/Sales/SalesForm';
-import { Card } from '@/components/ui/Card';
 import { useProducts } from '@/hooks/useProducts';
 import { usePromotions } from '@/hooks/usePromotions';
 import { useCustomers } from '@/hooks/useCustomers';
@@ -18,6 +17,17 @@ export default function SalesPage() {
   const { createSale } = useSales();
   const { createDebt } = useDebts();
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const handleCreateCustomer = async (name: string, phone?: string) => {
+    try {
+      await createCustomer({ name, phone });
+    } catch (error) {
+      setAlert({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Error al crear cliente',
+      });
+    }
+  };
 
   const handleCreateSale = async (
     items: CartItem[],
@@ -79,7 +89,7 @@ export default function SalesPage() {
         promotions={promotions}
         customers={customers}
         onCreateSale={handleCreateSale}
-        onCreateCustomer={createCustomer}
+        onCreateCustomer={handleCreateCustomer}
       />
     </div>
   );
