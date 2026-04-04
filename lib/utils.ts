@@ -1,9 +1,11 @@
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 
 export const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('es-CO', {
+  return new Intl.NumberFormat('es-CL', {
     style: 'currency',
-    currency: 'COP',
+    currency: 'CLP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(value);
 };
 

@@ -1,13 +1,17 @@
-import type { Metadata } from 'next';
-import { Navbar } from '@/components/Layout/Navbar';
-import { Sidebar } from '@/components/Layout/Sidebar';
+import type { Metadata, Viewport } from 'next';
+import { AuthProvider } from '@/hooks/useAuth';
+import ClientLayout from '@/components/Layout/ClientLayout';
 import './globals.css';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
   title: 'POS System',
   description: 'Sistema de Punto de Venta con Firebase',
   manifest: '/manifest.json',
-  viewport: 'width=device-width, initial-scale=1',
 };
 
 export default function RootLayout({
@@ -25,13 +29,11 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className="bg-gray-50 min-h-screen">
-        <Navbar />
-        <div className="flex">
-          <Sidebar />
-          <main className="flex-1 p-3 sm:p-6 max-w-7xl mx-auto w-full min-h-screen">
+        <AuthProvider>
+          <ClientLayout>
             {children}
-          </main>
-        </div>
+          </ClientLayout>
+        </AuthProvider>
       </body>
     </html>
   );
