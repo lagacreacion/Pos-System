@@ -1,22 +1,23 @@
 {
-  "name": "POS System",
+  "name": "POS System - Punto de Venta",
   "short_name": "POS",
-  "description": "Sistema de Punto de Venta con gestión de inventario",
-  "start_url": "/",
+  "description": "Sistema de Punto de Venta con gestión de inventario, clientes y reportes",
+  "start_url": "/sales",
   "display": "standalone",
   "scope": "/",
-  "background_color": "#ffffff",
-  "theme_color": "#3b82f6",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
   "orientation": "portrait-primary",
+  "id": "/",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%233b82f6' width='192' height='192'/><text x='50%' y='50%' font-size='100' fill='white' text-anchor='middle' dominant-baseline='central'>POS</text></svg>",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%233b82f6'/%3E%3Cstop offset='100%25' stop-color='%236366f1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' rx='40' width='192' height='192'/%3E%3Ctext x='50%25' y='54%25' font-size='72' font-weight='900' font-family='system-ui' fill='white' text-anchor='middle' dominant-baseline='central'%3EPOS%3C/text%3E%3C/svg%3E",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%233b82f6' width='512' height='512'/><text x='50%' y='50%' font-size='250' fill='white' text-anchor='middle' dominant-baseline='central'>POS</text></svg>",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%233b82f6'/%3E%3Cstop offset='100%25' stop-color='%236366f1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' rx='100' width='512' height='512'/%3E%3Ctext x='50%25' y='54%25' font-size='200' font-weight='900' font-family='system-ui' fill='white' text-anchor='middle' dominant-baseline='central'%3EPOS%3C/text%3E%3C/svg%3E",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
@@ -27,21 +28,21 @@
       "name": "Venta Principal",
       "short_name": "Ventas",
       "description": "Realizar una venta",
-      "url": "/sales?mode=standalone",
+      "url": "/sales",
       "icons": []
     },
     {
       "name": "Inventario",
-      "short_name": "Inventario",
+      "short_name": "Stock",
       "description": "Gestionar inventario",
-      "url": "/inventory?mode=standalone",
+      "url": "/inventory",
       "icons": []
     }
   ],
   "categories": ["business", "productivity"],
   "screenshots": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%23f3f4f6' width='540' height='720'/></svg>",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'%3E%3Crect fill='%23f1f5f9' width='540' height='720'/%3E%3Crect fill='%230f172a' width='540' height='56'/%3E%3Ctext x='20' y='36' font-size='20' font-weight='bold' font-family='system-ui' fill='white'%3EPOS System%3C/text%3E%3C/svg%3E",
       "sizes": "540x720",
       "type": "image/svg+xml",
       "form_factor": "narrow"

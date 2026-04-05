@@ -5,38 +5,39 @@ import {
   deleteDoc,
   doc,
   getDocs,
-  query,
-  where,
+  getDoc,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, getUserCollection } from '@/lib/firebase';
 import { Customer } from '@/types';
-
-const COLLECTION = 'customers';
 
 export const customerService = {
   async getAll(): Promise<Customer[]> {
-    const querySnapshot = await getDocs(collection(db, COLLECTION));
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate() || new Date(),
+    const colPath = getUserCollection('customers');
+    const querySnapshot = await getDocs(collection(db, colPath));
+    return querySnapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data(),
+      createdAt: d.data().createdAt?.toDate() || new Date(),
     })) as Customer[];
   },
 
   async getById(id: string): Promise<Customer | null> {
-    const querySnapshot = await getDocs(query(collection(db, COLLECTION), where('__name__', '==', id)));
-    if (querySnapshot.empty) return null;
+    const colPath = getUserCollection('customers');
+    const docRef = doc(db, colPath, id);
+    const snap = await getDoc(docRef);
 
-    const doc = querySnapshot.docs[0];
+    if (!snap.exists()) return null;
+
     return {
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate() || new Date(),
+      id: snap.id,
+      ...snap.data(),
+      createdAt: snap.data().createdAt?.toDate() || new Date(),
     } as Customer;
   },
 
   async create(customer: Omit<Customer, 'id' | 'createdAt' | 'totalDebt' | 'totalSpent'>): Promise<string> {
-    const docRef = await addDoc(collection(db, COLLECTION), {
+    const colPath = getUserCollection('customers');
+    const docRef = await addDoc(collection(db, colPath), {
       ...customer,
       totalDebt: 0,
       totalSpent: 0,
@@ -46,12 +47,14 @@ export const customerService = {
   },
 
   async update(id: string, updates: Partial<Customer>): Promise<void> {
-    const docRef = doc(db, COLLECTION, id);
+    const colPath = getUserCollection('customers');
+    const docRef = doc(db, colPath, id);
     await updateDoc(docRef, { ...updates });
   },
 
   async delete(id: string): Promise<void> {
-    const docRef = doc(db, COLLECTION, id);
+    const colPath = getUserCollection('customers');
+    const docRef = doc(db, colPath, id);
     await deleteDoc(docRef);
   },
 
@@ -59,14 +62,16 @@ export const customerService = {
     const customer = await this.getById(id);
     if (!customer) return;
 
-    const docRef = doc(db, COLLECTION, id);
+    const colPath = getUserCollection('customers');
+    const docRef = doc(db, colPath, id);
     await updateDoc(docRef, {
       totalSpent: (customer.totalSpent || 0) + amount,
     });
   },
 
   async updateDebt(id: string, amount: number): Promise<void> {
-    const docRef = doc(db, COLLECTION, id);
+    const colPath = getUserCollection('customers');
+    const docRef = doc(db, colPath, id);
     await updateDoc(docRef, {
       totalDebt: amount,
     });

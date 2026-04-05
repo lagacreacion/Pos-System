@@ -6,53 +6,55 @@ import {
   where,
   orderBy,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, getUserCollection } from '@/lib/firebase';
 import { Sale } from '@/types';
 import { productService } from './productService';
 import { customerService } from './customerService';
-
-const COLLECTION = 'sales';
+import { promotionService } from './promotionService';
 
 export const salesService = {
   async getAll(): Promise<Sale[]> {
+    const colPath = getUserCollection('sales');
     const querySnapshot = await getDocs(
-      query(collection(db, COLLECTION), orderBy('date', 'desc'))
+      query(collection(db, colPath), orderBy('date', 'desc'))
     );
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      date: doc.data().date?.toDate() || new Date(),
+    return querySnapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data(),
+      date: d.data().date?.toDate() || new Date(),
     })) as Sale[];
   },
 
   async getByCustomer(customerId: string): Promise<Sale[]> {
+    const colPath = getUserCollection('sales');
     const querySnapshot = await getDocs(
       query(
-        collection(db, COLLECTION),
+        collection(db, colPath),
         where('customerId', '==', customerId),
         orderBy('date', 'desc')
       )
     );
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      date: doc.data().date?.toDate() || new Date(),
+    return querySnapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data(),
+      date: d.data().date?.toDate() || new Date(),
     })) as Sale[];
   },
 
   async getByDateRange(startDate: Date, endDate: Date): Promise<Sale[]> {
+    const colPath = getUserCollection('sales');
     const querySnapshot = await getDocs(
       query(
-        collection(db, COLLECTION),
+        collection(db, colPath),
         where('date', '>=', startDate),
         where('date', '<=', endDate),
         orderBy('date', 'desc')
       )
     );
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      date: doc.data().date?.toDate() || new Date(),
+    return querySnapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data(),
+      date: d.data().date?.toDate() || new Date(),
     })) as Sale[];
   },
 
@@ -62,8 +64,18 @@ export const salesService = {
       if (item.type === 'product' && item.productId) {
         await productService.decrementStock(item.productId, item.quantity);
       }
-      // If it's a promotion, we should ideally decrement stock for products in the promotion
-      // But let's keep it simple for now as we don't have promotion details here
+      // PASO 5 FIX: If the item is a promotion, fetch its products and decrement each one
+      if (item.type === 'promotion' && item.promotionId) {
+        const promotion = await promotionService.getById(item.promotionId);
+        if (promotion && promotion.products) {
+          for (const promoProduct of promotion.products) {
+            await productService.decrementStock(
+              promoProduct.productId,
+              promoProduct.quantity * item.quantity
+            );
+          }
+        }
+      }
     }
 
     // Update customer total spent
@@ -71,7 +83,8 @@ export const salesService = {
       await customerService.updateSpent(sale.customerId, sale.totalAmount);
     }
 
-    const docRef = await addDoc(collection(db, COLLECTION), {
+    const colPath = getUserCollection('sales');
+    const docRef = await addDoc(collection(db, colPath), {
       ...sale,
       date: new Date(),
     });

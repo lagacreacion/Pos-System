@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, enableMultiTabIndexedDbPersistence } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -14,3 +14,24 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
+
+// --- PASO 2: Enable offline persistence ---
+if (typeof window !== 'undefined') {
+  enableMultiTabIndexedDbPersistence(db).catch((err) => {
+    if (err.code === 'failed-precondition') {
+      console.warn('Firestore persistence failed: multiple tabs open.');
+    } else if (err.code === 'unimplemented') {
+      console.warn('Firestore persistence not supported in this browser.');
+    }
+  });
+}
+
+// --- PASO 1: Multi-tenant helper ---
+// Returns the user-scoped collection path: users/{uid}/{collectionName}
+export function getUserCollection(collectionName: string): string {
+  const uid = auth.currentUser?.uid;
+  if (!uid) {
+    throw new Error('Usuario no autenticado. Inicia sesión para continuar.');
+  }
+  return `users/${uid}/${collectionName}`;
+}

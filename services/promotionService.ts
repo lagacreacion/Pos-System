@@ -5,24 +5,39 @@ import {
   deleteDoc,
   doc,
   getDocs,
+  getDoc,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, getUserCollection } from '@/lib/firebase';
 import { Promotion } from '@/types';
-
-const COLLECTION = 'promotions';
 
 export const promotionService = {
   async getAll(): Promise<Promotion[]> {
-    const querySnapshot = await getDocs(collection(db, COLLECTION));
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate() || new Date(),
+    const colPath = getUserCollection('promotions');
+    const querySnapshot = await getDocs(collection(db, colPath));
+    return querySnapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data(),
+      createdAt: d.data().createdAt?.toDate() || new Date(),
     })) as Promotion[];
   },
 
+  async getById(id: string): Promise<Promotion | null> {
+    const colPath = getUserCollection('promotions');
+    const docRef = doc(db, colPath, id);
+    const snap = await getDoc(docRef);
+
+    if (!snap.exists()) return null;
+
+    return {
+      id: snap.id,
+      ...snap.data(),
+      createdAt: snap.data().createdAt?.toDate() || new Date(),
+    } as Promotion;
+  },
+
   async create(promotion: Omit<Promotion, 'id' | 'createdAt'>): Promise<string> {
-    const docRef = await addDoc(collection(db, COLLECTION), {
+    const colPath = getUserCollection('promotions');
+    const docRef = await addDoc(collection(db, colPath), {
       ...promotion,
       createdAt: new Date(),
     });
@@ -30,12 +45,14 @@ export const promotionService = {
   },
 
   async update(id: string, updates: Partial<Promotion>): Promise<void> {
-    const docRef = doc(db, COLLECTION, id);
+    const colPath = getUserCollection('promotions');
+    const docRef = doc(db, colPath, id);
     await updateDoc(docRef, { ...updates });
   },
 
   async delete(id: string): Promise<void> {
-    const docRef = doc(db, COLLECTION, id);
+    const colPath = getUserCollection('promotions');
+    const docRef = doc(db, colPath, id);
     await deleteDoc(docRef);
   },
 };
