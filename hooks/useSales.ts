@@ -42,7 +42,7 @@ export const useSales = () => {
     try {
       setError(null);
       setLoading(true);
-      await salesService.delete(sale);
+      await salesService.remove(sale);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar venta';
       setError(message);

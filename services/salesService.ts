@@ -94,7 +94,7 @@ export const salesService = {
     return docRef.id;
   },
 
-  async delete(sale: Sale): Promise<void> {
+  async remove(sale: Sale): Promise<void> {
     // Restore stock
     for (const item of sale.items) {
       if (item.type === 'product' && item.productId) {
