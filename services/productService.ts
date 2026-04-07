@@ -61,4 +61,17 @@ export const productService = {
       stock: currentStock - quantity,
     });
   },
+
+  async incrementStock(id: string, quantity: number): Promise<void> {
+    const colPath = getUserCollection('products');
+    const docRef = doc(db, colPath, id);
+    const snap = await getDoc(docRef);
+
+    if (!snap.exists()) return;
+
+    const currentStock = snap.data()?.stock || 0;
+    await updateDoc(docRef, {
+      stock: currentStock + quantity,
+    });
+  },
 };

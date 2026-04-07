@@ -1,6 +1,8 @@
 import {
   collection,
   addDoc,
+  deleteDoc,
+  doc,
   getDocs,
   query,
   where,
@@ -11,6 +13,7 @@ import { Sale } from '@/types';
 import { productService } from './productService';
 import { customerService } from './customerService';
 import { promotionService } from './promotionService';
+import { debtService } from './debtService';
 
 export const salesService = {
   async getAll(): Promise<Sale[]> {
@@ -89,5 +92,38 @@ export const salesService = {
       date: new Date(),
     });
     return docRef.id;
+  },
+
+  async delete(sale: Sale): Promise<void> {
+    // Restore stock
+    for (const item of sale.items) {
+      if (item.type === 'product' && item.productId) {
+        await productService.incrementStock(item.productId, item.quantity);
+      }
+      if (item.type === 'promotion' && item.promotionId) {
+        const promotion = await promotionService.getById(item.promotionId);
+        if (promotion && promotion.products) {
+          for (const promoProduct of promotion.products) {
+            await productService.incrementStock(
+              promoProduct.productId,
+              promoProduct.quantity * item.quantity
+            );
+          }
+        }
+      }
+    }
+
+    // Reverse customer totalSpent
+    if (sale.customerId) {
+      await customerService.updateSpent(sale.customerId, -sale.totalAmount);
+    }
+
+    // Remove debt if credit
+    if (sale.paymentMethod === 'credit') {
+      await debtService.deleteBySaleId(sale.id);
+    }
+
+    const colPath = getUserCollection('sales');
+    await deleteDoc(doc(db, colPath, sale.id));
   },
 };

@@ -28,6 +28,7 @@ export const reportService = {
       totalCollected,
       totalPending,
       customersServed: uniqueCustomers.size,
+      sales,
     };
   },
 

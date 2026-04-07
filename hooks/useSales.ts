@@ -38,10 +38,25 @@ export const useSales = () => {
     }
   };
 
+  const deleteSale = async (sale: Sale) => {
+    try {
+      setError(null);
+      setLoading(true);
+      await salesService.delete(sale);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar venta';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     error,
     createSale,
     getSalesByCustomer,
+    deleteSale,
   };
 };

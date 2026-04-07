@@ -60,6 +60,7 @@ export interface DailyReport {
   totalCollected: number;
   totalPending: number;
   customersServed: number;
+  sales: Sale[];
 }
 
 export interface MonthlyReport {

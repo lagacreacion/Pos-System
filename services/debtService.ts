@@ -82,4 +82,14 @@ export const debtService = {
     const docRef = doc(db, colPath, id);
     await deleteDoc(docRef);
   },
+
+  async deleteBySaleId(saleId: string): Promise<void> {
+    const colPath = getUserCollection('debts');
+    const snap = await getDocs(
+      query(collection(db, colPath), where('saleId', '==', saleId))
+    );
+    for (const d of snap.docs) {
+      await deleteDoc(doc(db, colPath, d.id));
+    }
+  },
 };
