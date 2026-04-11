@@ -1,23 +1,16 @@
-# POS System - Sistema de Punto de Venta
+# 📊 POS System - Ventas e Inventario
 
-Aplicación web completa para gestionar ventas, inventario, clientes y deudas (fiados). Construida con Next.js 14, React 18, TypeScript y Firebase Firestore.
+Aplicación web completa y moderna para gestionar ventas, inventario, clientes y deudas. Recientemente actualizada a una **arquitectura multi-usuario**, permitiendo que múltiples negocios utilicen el sistema de forma independiente y segura.
 
-## 🚀 Características
+> [!IMPORTANT]
+> Para un análisis detallado de todos los módulos y la arquitectura técnica, consulta el [Reporte del Sistema (SYSTEM_OVERVIEW.md)](./SYSTEM_OVERVIEW.md).
 
-### Módulos Principales
+## 🚀 Características Principales (Multi-Usuario)
 
-1. **Venta Principal (POS)**
-   - Crear ventas en tiempo real
-   - Selector de productos y promociones
-   - Carrito de compras dinámico
-   - Métodos de pago: Efectivo, Transferencia, Crédito (Fiado)
-   - Crear clientes sobre la marcha
-
-2. **Inventario**
-   - CRUD completo de productos
-   - Alertas de stock bajo (< 5 unidades)
-   - Gestión de precios y costos
-   - Control de stock en tiempo real
+1. **Venta Principal (POS)**: Interfaz rápida con soporte para múltiples métodos de pago y vinculación automática de créditos.
+2. **Arquitectura Segura**: Aislamiento de datos por usuario mediante filtrado por `userId` en Firestore.
+3. **Gestión de Inventario**: Control de stock en tiempo real con alertas de inventario bajo.
+4. **Reportes y Analíticas**: Visualización de rendimiento diario, mensual y tendencias mediante gráficos interactivos.
 
 3. **Promociones**
    - Crear combos con múltiples productos
