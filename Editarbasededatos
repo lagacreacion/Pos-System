@@ -1,0 +1,298 @@
+Actúa como un ingeniero senior experto en Firebase y arquitectura multiusuario.
+
+Necesito convertir mi sistema actual en un sistema multiusuario correctamente estructurado.
+
+OBJETIVO:
+Cada usuario debe tener sus propios datos completamente aislados usando Firebase Auth.
+
+---
+
+## 🧠 CONTEXTO
+
+* Uso Firebase Firestore
+* Uso Firebase Auth
+* Actualmente mis colecciones NO tienen userId
+* Todas las ventas, productos y datos están mezclados
+
+Colecciones actuales:
+
+* sales
+* products
+* promotions
+* customers
+* debts
+
+---
+
+## 🎯 OBJETIVO PRINCIPAL
+
+Agregar soporte multiusuario a TODO el sistema.
+
+Cada documento debe pertenecer a un usuario.
+
+---
+
+## 🧩 TAREAS
+
+1. ACTUALIZAR CREACIÓN DE DOCUMENTOS
+
+Modificar toda la lógica de creación para incluir:
+
+userId: auth.currentUser.uid
+
+Aplicar a:
+
+* sales
+* products
+* promotions
+* customers
+* debts
+
+---
+
+2. MIGRAR DATOS EXISTENTES
+
+Crear un script que:
+
+* Recorra TODAS las colecciones:
+  sales, products, promotions, customers, debts
+
+* Agregue userId a cada documento existente
+
+* Use un userId fijo (porque es uso personal)
+
+IMPORTANTE:
+
+* No borrar datos
+* Solo agregar campo
+
+---
+
+3. ACTUALIZAR CONSULTAS
+
+Modificar TODAS las queries para incluir:
+
+where("userId", "==", auth.currentUser.uid)
+
+---
+
+4. VALIDACIÓN
+
+* No permitir crear documentos sin usuario autenticado
+* Lanzar error si auth.currentUser es null
+
+---
+
+5. SEGURIDAD (FIRESTORE RULES)
+
+Generar reglas que:
+
+* Solo permitan acceso a documentos del usuario
+* Bloqueen acceso a otros usuarios
+
+---
+
+6. BUENAS PRÁCTICAS
+
+* No romper código existente
+* No duplicar lógica
+* Explicar cambios
+* Código modular
+
+---
+
+7. ENTREGA
+
+Quiero:
+
+1. Código actualizado de creación
+2. Script de migración
+3. Ejemplo de queries
+4. Reglas de seguridad
+5. Explicación clara
+
+---
+
+🚨 REGLA CRÍTICA:
+
+NO reescribir toda la app.
+Solo adaptar el sistema a multiusuario correctamente.
+
+
+Perfecto, procede con la implementación pero siguiendo estas reglas estrictas:
+
+------------------
+
+## FASE 1 — SOLO ANÁLISIS Y CAMBIOS CONTROLADOS
+
+1. NO ejecutes ningún script de migración todavía.
+
+2. Primero quiero que hagas SOLO esto:
+
+* Lista todos los archivos que vas a modificar
+* Explica exactamente qué cambiarás en cada uno
+* Muestra el código ANTES y DESPUÉS de cada cambio
+
+---
+
+3. Enfócate únicamente en:
+
+* lib/firebase.ts
+* services/salesService.ts
+* services/productService.ts
+* services/customerService.ts
+* services/promotionsService.ts
+* services/debtsService.ts
+
+---
+
+4. Cambios requeridos:
+
+* Agregar userId en cada creación de documento
+* Agregar filtro where("userId", "==", uid) en consultas
+* Validar usuario autenticado
+
+---
+
+5. IMPORTANTE:
+
+* NO elimines código existente
+* NO reestructures toda la app
+* NO cambies nombres de colecciones
+* SOLO agrega lo necesario para soportar userId
+
+---
+
+6. Luego de eso:
+
+Quiero que generes el script de migración SEPARADO, pero NO lo ejecutes.
+
+---
+
+7. Entrega:
+
+* Lista de archivos modificados
+* Código actualizado por archivo
+* Explicación clara de cada cambio
+
+---
+
+NO AVANCES A OTRAS FASES.
+---------------
+
+Perfecto, antes de continuar necesito validar que todo esté correcto.
+
+Muéstrame ejemplos REALES del código final en estos casos:
+
+1. Creación de una venta (salesService)
+2. Consulta de ventas (salesService)
+3. Creación de producto (productService)
+4. Consulta de productos
+
+Quiero ver exactamente:
+
+* Cómo obtienes el userId
+* Cómo lo guardas en el documento
+* Cómo aplicas el filtro where("userId", "==", uid)
+
+IMPORTANTE:
+
+* Muestra el código completo de esas funciones
+* No resumas
+* No expliques demasiado, quiero ver código real
+
+NO avances a migración aún.
+
+------
+
+----------------------
+
+Perfecto, pero antes de continuar necesito corregir algunos problemas importantes.
+
+Aplica estos cambios:
+
+---
+
+1. ELIMINAR getUserCollection
+
+Reemplaza:
+
+getUserCollection('sales')
+
+por:
+
+collection(db, 'sales')
+
+Haz esto en TODOS los servicios:
+
+* sales
+* products
+* customers
+* promotions
+* debts
+
+---
+
+2. VALIDAR USUARIO (OBLIGATORIO)
+
+Reemplaza:
+
+auth.currentUser?.uid
+
+por:
+
+const user = auth.currentUser;
+if (!user) throw new Error("Usuario no autenticado");
+
+user.uid
+
+---
+
+3. USAR serverTimestamp
+
+Reemplaza:
+
+new Date()
+
+por:
+
+serverTimestamp()
+
+(importarlo desde firebase/firestore)
+
+---
+
+4. NO CAMBIAR NADA MÁS
+
+* No modificar lógica existente
+* No reestructurar código
+* No tocar migración aún
+
+---
+
+ENTREGA:
+
+* Código actualizado de salesService y productService
+* Solo los métodos create y getAll
+
+NO AVANCES A MIGRACIÓN
+------
+
+
+
+Ahora quiero revisar el script de migración antes de ejecutarlo.
+
+Muéstrame el contenido completo de:
+
+lib/migration-script.ts
+
+Quiero validar:
+
+* Cómo recorres las colecciones
+* Cómo actualizas los documentos
+* Que uses update() y no set()
+* Que no sobrescriba datos existentes
+* Manejo de errores
+
+NO ejecutes nada.
+Solo mostrar código completo.

@@ -8,15 +8,22 @@ import {
   query,
   where,
   orderBy,
+  serverTimestamp,
 } from 'firebase/firestore';
-import { db, getUserCollection } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { Debt } from '@/types';
 
 export const debtService = {
   async getAll(): Promise<Debt[]> {
-    const colPath = getUserCollection('debts');
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuario no autenticado");
+
     const querySnapshot = await getDocs(
-      query(collection(db, colPath), orderBy('dueDate', 'asc'))
+      query(
+        collection(db, 'debts'),
+        where('userId', '==', user.uid),
+        orderBy('dueDate', 'asc')
+      )
     );
     return querySnapshot.docs.map(d => ({
       id: d.id,
@@ -27,10 +34,13 @@ export const debtService = {
   },
 
   async getByCustomer(customerId: string): Promise<Debt[]> {
-    const colPath = getUserCollection('debts');
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuario no autenticado");
+
     const querySnapshot = await getDocs(
       query(
-        collection(db, colPath),
+        collection(db, 'debts'),
+        where('userId', '==', user.uid),
         where('customerId', '==', customerId),
         orderBy('dueDate', 'asc')
       )
@@ -44,10 +54,13 @@ export const debtService = {
   },
 
   async getPending(): Promise<Debt[]> {
-    const colPath = getUserCollection('debts');
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuario no autenticado");
+
     const querySnapshot = await getDocs(
       query(
-        collection(db, colPath),
+        collection(db, 'debts'),
+        where('userId', '==', user.uid),
         where('status', '==', 'pending'),
         orderBy('dueDate', 'asc')
       )
@@ -61,35 +74,42 @@ export const debtService = {
   },
 
   async create(debt: Omit<Debt, 'id' | 'createdAt'>): Promise<string> {
-    const colPath = getUserCollection('debts');
-    const docRef = await addDoc(collection(db, colPath), {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuario no autenticado");
+
+    const docRef = await addDoc(collection(db, 'debts'), {
       ...debt,
-      createdAt: new Date(),
+      userId: user.uid,
+      createdAt: serverTimestamp(),
     });
     return docRef.id;
   },
 
   async markAsPaid(id: string): Promise<void> {
-    const colPath = getUserCollection('debts');
-    const docRef = doc(db, colPath, id);
+    const docRef = doc(db, 'debts', id);
     await updateDoc(docRef, {
       status: 'paid',
     });
   },
 
   async delete(id: string): Promise<void> {
-    const colPath = getUserCollection('debts');
-    const docRef = doc(db, colPath, id);
+    const docRef = doc(db, 'debts', id);
     await deleteDoc(docRef);
   },
 
   async deleteBySaleId(saleId: string): Promise<void> {
-    const colPath = getUserCollection('debts');
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuario no autenticado");
+
     const snap = await getDocs(
-      query(collection(db, colPath), where('saleId', '==', saleId))
+      query(
+        collection(db, 'debts'),
+        where('userId', '==', user.uid),
+        where('saleId', '==', saleId)
+      )
     );
     for (const d of snap.docs) {
-      await deleteDoc(doc(db, colPath, d.id));
+      await deleteDoc(doc(db, 'debts', d.id));
     }
   },
 };

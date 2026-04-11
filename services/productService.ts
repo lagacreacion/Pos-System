@@ -6,14 +6,21 @@ import {
   doc,
   getDocs,
   getDoc,
+  query,
+  where,
+  serverTimestamp,
 } from 'firebase/firestore';
-import { db, getUserCollection } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { Product } from '@/types';
 
 export const productService = {
   async getAll(): Promise<Product[]> {
-    const colPath = getUserCollection('products');
-    const querySnapshot = await getDocs(collection(db, colPath));
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuario no autenticado");
+
+    const querySnapshot = await getDocs(
+      query(collection(db, 'products'), where('userId', '==', user.uid))
+    );
     return querySnapshot.docs.map(d => ({
       id: d.id,
       ...d.data(),
@@ -22,29 +29,29 @@ export const productService = {
   },
 
   async create(product: Omit<Product, 'id' | 'createdAt'>): Promise<string> {
-    const colPath = getUserCollection('products');
-    const docRef = await addDoc(collection(db, colPath), {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuario no autenticado");
+
+    const docRef = await addDoc(collection(db, 'products'), {
       ...product,
-      createdAt: new Date(),
+      userId: user.uid,
+      createdAt: serverTimestamp(),
     });
     return docRef.id;
   },
 
   async update(id: string, updates: Partial<Product>): Promise<void> {
-    const colPath = getUserCollection('products');
-    const docRef = doc(db, colPath, id);
+    const docRef = doc(db, 'products', id);
     await updateDoc(docRef, { ...updates });
   },
 
   async delete(id: string): Promise<void> {
-    const colPath = getUserCollection('products');
-    const docRef = doc(db, colPath, id);
+    const docRef = doc(db, 'products', id);
     await deleteDoc(docRef);
   },
 
   async decrementStock(id: string, quantity: number): Promise<void> {
-    const colPath = getUserCollection('products');
-    const docRef = doc(db, colPath, id);
+    const docRef = doc(db, 'products', id);
     const snap = await getDoc(docRef);
 
     if (!snap.exists()) {
@@ -63,8 +70,7 @@ export const productService = {
   },
 
   async incrementStock(id: string, quantity: number): Promise<void> {
-    const colPath = getUserCollection('products');
-    const docRef = doc(db, colPath, id);
+    const docRef = doc(db, 'products', id);
     const snap = await getDoc(docRef);
 
     if (!snap.exists()) return;

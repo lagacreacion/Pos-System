@@ -26,12 +26,4 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// --- PASO 1: Multi-tenant helper ---
-// Returns the user-scoped collection path: users/{uid}/{collectionName}
-export function getUserCollection(collectionName: string): string {
-  const uid = auth.currentUser?.uid;
-  if (!uid) {
-    throw new Error('Usuario no autenticado. Inicia sesión para continuar.');
-  }
-  return `users/${uid}/${collectionName}`;
-}
+

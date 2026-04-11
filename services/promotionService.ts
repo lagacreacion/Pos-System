@@ -6,14 +6,21 @@ import {
   doc,
   getDocs,
   getDoc,
+  query,
+  where,
+  serverTimestamp,
 } from 'firebase/firestore';
-import { db, getUserCollection } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { Promotion } from '@/types';
 
 export const promotionService = {
   async getAll(): Promise<Promotion[]> {
-    const colPath = getUserCollection('promotions');
-    const querySnapshot = await getDocs(collection(db, colPath));
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuario no autenticado");
+
+    const querySnapshot = await getDocs(
+      query(collection(db, 'promotions'), where('userId', '==', user.uid))
+    );
     return querySnapshot.docs.map(d => ({
       id: d.id,
       ...d.data(),
@@ -22,8 +29,7 @@ export const promotionService = {
   },
 
   async getById(id: string): Promise<Promotion | null> {
-    const colPath = getUserCollection('promotions');
-    const docRef = doc(db, colPath, id);
+    const docRef = doc(db, 'promotions', id);
     const snap = await getDoc(docRef);
 
     if (!snap.exists()) return null;
@@ -36,23 +42,24 @@ export const promotionService = {
   },
 
   async create(promotion: Omit<Promotion, 'id' | 'createdAt'>): Promise<string> {
-    const colPath = getUserCollection('promotions');
-    const docRef = await addDoc(collection(db, colPath), {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuario no autenticado");
+
+    const docRef = await addDoc(collection(db, 'promotions'), {
       ...promotion,
-      createdAt: new Date(),
+      userId: user.uid,
+      createdAt: serverTimestamp(),
     });
     return docRef.id;
   },
 
   async update(id: string, updates: Partial<Promotion>): Promise<void> {
-    const colPath = getUserCollection('promotions');
-    const docRef = doc(db, colPath, id);
+    const docRef = doc(db, 'promotions', id);
     await updateDoc(docRef, { ...updates });
   },
 
   async delete(id: string): Promise<void> {
-    const colPath = getUserCollection('promotions');
-    const docRef = doc(db, colPath, id);
+    const docRef = doc(db, 'promotions', id);
     await deleteDoc(docRef);
   },
 };

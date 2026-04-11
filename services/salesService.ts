@@ -7,8 +7,9 @@ import {
   query,
   where,
   orderBy,
+  serverTimestamp,
 } from 'firebase/firestore';
-import { db, getUserCollection } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { Sale } from '@/types';
 import { productService } from './productService';
 import { customerService } from './customerService';
@@ -17,9 +18,15 @@ import { debtService } from './debtService';
 
 export const salesService = {
   async getAll(): Promise<Sale[]> {
-    const colPath = getUserCollection('sales');
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuario no autenticado");
+
     const querySnapshot = await getDocs(
-      query(collection(db, colPath), orderBy('date', 'desc'))
+      query(
+        collection(db, 'sales'),
+        where('userId', '==', user.uid),
+        orderBy('date', 'desc')
+      )
     );
     return querySnapshot.docs.map(d => ({
       id: d.id,
@@ -29,10 +36,13 @@ export const salesService = {
   },
 
   async getByCustomer(customerId: string): Promise<Sale[]> {
-    const colPath = getUserCollection('sales');
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuario no autenticado");
+
     const querySnapshot = await getDocs(
       query(
-        collection(db, colPath),
+        collection(db, 'sales'),
+        where('userId', '==', user.uid),
         where('customerId', '==', customerId),
         orderBy('date', 'desc')
       )
@@ -45,10 +55,13 @@ export const salesService = {
   },
 
   async getByDateRange(startDate: Date, endDate: Date): Promise<Sale[]> {
-    const colPath = getUserCollection('sales');
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuario no autenticado");
+
     const querySnapshot = await getDocs(
       query(
-        collection(db, colPath),
+        collection(db, 'sales'),
+        where('userId', '==', user.uid),
         where('date', '>=', startDate),
         where('date', '<=', endDate),
         orderBy('date', 'desc')
@@ -86,10 +99,13 @@ export const salesService = {
       await customerService.updateSpent(sale.customerId, sale.totalAmount);
     }
 
-    const colPath = getUserCollection('sales');
-    const docRef = await addDoc(collection(db, colPath), {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuario no autenticado");
+
+    const docRef = await addDoc(collection(db, 'sales'), {
       ...sale,
-      date: new Date(),
+      userId: user.uid,
+      date: serverTimestamp(),
     });
     return docRef.id;
   },
@@ -123,7 +139,6 @@ export const salesService = {
       await debtService.deleteBySaleId(sale.id);
     }
 
-    const colPath = getUserCollection('sales');
-    await deleteDoc(doc(db, colPath, sale.id));
+    await deleteDoc(doc(db, 'sales', sale.id));
   },
 };

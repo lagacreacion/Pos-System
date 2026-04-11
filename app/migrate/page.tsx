@@ -6,6 +6,8 @@ import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/Button';
 
+import { migrateExistingDataToUser } from '@/lib/migration-script';
+
 export default function MigratePage() {
   const { user } = useAuth();
   const [status, setStatus] = useState<string>('Esperando...');
@@ -13,36 +15,23 @@ export default function MigratePage() {
 
   const startMigration = async () => {
     if (!user) {
-      setStatus('Error: Debes iniciar sesión con tu cuenta lagaalfonso@gmail.com');
+      setStatus('Error: Debes iniciar sesión para continuar.');
       return;
     }
 
     setLoading(true);
-    setStatus('Iniciando copia de seguridad...');
+    setStatus('Iniciando migración segura...');
 
     try {
-      const collectionsToMigrate = ['products', 'customers', 'promotions', 'debts', 'sales'];
-
-      for (const colName of collectionsToMigrate) {
-        setStatus(`Migrando colección: ${colName}...`);
-        
-        // 1. Obtener la colección global "pública" antigua
-        const oldCollectionRef = collection(db, colName);
-        const snapshot = await getDocs(oldCollectionRef);
-        
-        // 2. Copiarla uno por uno al pasillo privado del usuario autenticado
-        let count = 0;
-        for (const document of snapshot.docs) {
-          // El helper db usa users/UID/colName, por lo que escribimos directo ahí
-          const newUserCollectionRef = doc(db, `users/${user.uid}/${colName}`, document.id);
-          await setDoc(newUserCollectionRef, document.data(), { merge: true });
-          count++;
-        }
-        
-        console.log(`Migrados ${count} documentos de ${colName}`);
-      }
-
-      setStatus('¡Migración Completada con Éxito! Ya puedes volver al inicio.');
+      await migrateExistingDataToUser(user.uid);
+      setStatus('¡Migración Completada con Éxito! Ya puedes ver tu inventario.');
+    } catch (error: any) {
+      console.error(error);
+      setStatus(`Error durante la migración: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
     } catch (error: any) {
       console.error(error);
       setStatus(`Error durante la migración: ${error.message}`);
