@@ -18,9 +18,12 @@ export const productService = {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuario no autenticado");
 
-    const querySnapshot = await getDocs(
-      query(collection(db, 'products'), where('userId', '==', user.uid))
-    );
+    const isAdmin = user.email === 'lagaalfonso1@gmail.com';
+    const q = isAdmin
+      ? query(collection(db, 'products'))
+      : query(collection(db, 'products'), where('userId', '==', user.uid));
+
+    const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(d => ({
       id: d.id,
       ...d.data(),

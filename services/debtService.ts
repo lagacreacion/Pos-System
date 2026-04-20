@@ -18,13 +18,12 @@ export const debtService = {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuario no autenticado");
 
-    const querySnapshot = await getDocs(
-      query(
-        collection(db, 'debts'),
-        where('userId', '==', user.uid),
-        orderBy('dueDate', 'asc')
-      )
-    );
+    const isAdmin = user.email === 'lagaalfonso1@gmail.com';
+    const q = isAdmin
+      ? query(collection(db, 'debts'), orderBy('dueDate', 'asc'))
+      : query(collection(db, 'debts'), where('userId', '==', user.uid), orderBy('dueDate', 'asc'));
+
+    const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(d => ({
       id: d.id,
       ...d.data(),
@@ -37,14 +36,12 @@ export const debtService = {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuario no autenticado");
 
-    const querySnapshot = await getDocs(
-      query(
-        collection(db, 'debts'),
-        where('userId', '==', user.uid),
-        where('customerId', '==', customerId),
-        orderBy('dueDate', 'asc')
-      )
-    );
+    const isAdmin = user.email === 'lagaalfonso1@gmail.com';
+    const q = isAdmin
+      ? query(collection(db, 'debts'), where('customerId', '==', customerId), orderBy('dueDate', 'asc'))
+      : query(collection(db, 'debts'), where('userId', '==', user.uid), where('customerId', '==', customerId), orderBy('dueDate', 'asc'));
+
+    const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(d => ({
       id: d.id,
       ...d.data(),
@@ -57,14 +54,12 @@ export const debtService = {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuario no autenticado");
 
-    const querySnapshot = await getDocs(
-      query(
-        collection(db, 'debts'),
-        where('userId', '==', user.uid),
-        where('status', '==', 'pending'),
-        orderBy('dueDate', 'asc')
-      )
-    );
+    const isAdmin = user.email === 'lagaalfonso1@gmail.com';
+    const q = isAdmin
+      ? query(collection(db, 'debts'), where('status', '==', 'pending'), orderBy('dueDate', 'asc'))
+      : query(collection(db, 'debts'), where('userId', '==', user.uid), where('status', '==', 'pending'), orderBy('dueDate', 'asc'));
+
+    const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(d => ({
       id: d.id,
       ...d.data(),
@@ -101,13 +96,12 @@ export const debtService = {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuario no autenticado");
 
-    const snap = await getDocs(
-      query(
-        collection(db, 'debts'),
-        where('userId', '==', user.uid),
-        where('saleId', '==', saleId)
-      )
-    );
+    const isAdmin = user.email === 'lagaalfonso1@gmail.com';
+    const q = isAdmin
+      ? query(collection(db, 'debts'), where('saleId', '==', saleId))
+      : query(collection(db, 'debts'), where('userId', '==', user.uid), where('saleId', '==', saleId));
+
+    const snap = await getDocs(q);
     for (const d of snap.docs) {
       await deleteDoc(doc(db, 'debts', d.id));
     }

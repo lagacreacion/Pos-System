@@ -21,13 +21,12 @@ export const salesService = {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuario no autenticado");
 
-    const querySnapshot = await getDocs(
-      query(
-        collection(db, 'sales'),
-        where('userId', '==', user.uid),
-        orderBy('date', 'desc')
-      )
-    );
+    const isAdmin = user.email === 'lagaalfonso1@gmail.com';
+    const q = isAdmin
+      ? query(collection(db, 'sales'), orderBy('date', 'desc'))
+      : query(collection(db, 'sales'), where('userId', '==', user.uid), orderBy('date', 'desc'));
+
+    const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(d => ({
       id: d.id,
       ...d.data(),
@@ -39,14 +38,12 @@ export const salesService = {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuario no autenticado");
 
-    const querySnapshot = await getDocs(
-      query(
-        collection(db, 'sales'),
-        where('userId', '==', user.uid),
-        where('customerId', '==', customerId),
-        orderBy('date', 'desc')
-      )
-    );
+    const isAdmin = user.email === 'lagaalfonso1@gmail.com';
+    const q = isAdmin
+      ? query(collection(db, 'sales'), where('customerId', '==', customerId), orderBy('date', 'desc'))
+      : query(collection(db, 'sales'), where('userId', '==', user.uid), where('customerId', '==', customerId), orderBy('date', 'desc'));
+
+    const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(d => ({
       id: d.id,
       ...d.data(),
@@ -58,15 +55,12 @@ export const salesService = {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuario no autenticado");
 
-    const querySnapshot = await getDocs(
-      query(
-        collection(db, 'sales'),
-        where('userId', '==', user.uid),
-        where('date', '>=', startDate),
-        where('date', '<=', endDate),
-        orderBy('date', 'desc')
-      )
-    );
+    const isAdmin = user.email === 'lagaalfonso1@gmail.com';
+    const q = isAdmin
+      ? query(collection(db, 'sales'), where('date', '>=', startDate), where('date', '<=', endDate), orderBy('date', 'desc'))
+      : query(collection(db, 'sales'), where('userId', '==', user.uid), where('date', '>=', startDate), where('date', '<=', endDate), orderBy('date', 'desc'));
+
+    const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(d => ({
       id: d.id,
       ...d.data(),
