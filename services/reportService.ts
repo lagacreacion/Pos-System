@@ -1,5 +1,6 @@
 import { salesService } from './salesService';
 import { customerService } from './customerService';
+import { debtService } from './debtService';
 import { DailyReport, MonthlyReport, Analytics } from '@/types';
 import { format, startOfDay, endOfDay, startOfMonth, endOfMonth } from 'date-fns';
 
@@ -9,14 +10,26 @@ export const reportService = {
     const endDate = endOfDay(date);
 
     const sales = await salesService.getByDateRange(startDate, endDate);
+    const debts = await debtService.getAll();
+    const debtMap = new Map(debts.map(d => [d.saleId, d.status]));
 
     const totalSold = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
-    const totalCollected = sales
-      .filter(sale => sale.paymentMethod !== 'credit')
-      .reduce((sum, sale) => sum + sale.totalAmount, 0);
-    const totalPending = sales
-      .filter(sale => sale.paymentMethod === 'credit')
-      .reduce((sum, sale) => sum + sale.totalAmount, 0);
+    
+    let totalCollected = 0;
+    let totalPending = 0;
+
+    sales.forEach(sale => {
+      if (sale.paymentMethod !== 'credit') {
+        totalCollected += sale.totalAmount;
+      } else {
+        const status = debtMap.get(sale.id);
+        if (status === 'paid') {
+          totalCollected += sale.totalAmount;
+        } else {
+          totalPending += sale.totalAmount;
+        }
+      }
+    });
 
     const uniqueCustomers = new Set(
       sales.filter(sale => sale.customerId).map(sale => sale.customerId)
@@ -37,14 +50,26 @@ export const reportService = {
     const endDate = endOfMonth(date);
 
     const sales = await salesService.getByDateRange(startDate, endDate);
+    const debts = await debtService.getAll();
+    const debtMap = new Map(debts.map(d => [d.saleId, d.status]));
 
     const totalSold = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
-    const totalCollected = sales
-      .filter(sale => sale.paymentMethod !== 'credit')
-      .reduce((sum, sale) => sum + sale.totalAmount, 0);
-    const totalPending = sales
-      .filter(sale => sale.paymentMethod === 'credit')
-      .reduce((sum, sale) => sum + sale.totalAmount, 0);
+    
+    let totalCollected = 0;
+    let totalPending = 0;
+
+    sales.forEach(sale => {
+      if (sale.paymentMethod !== 'credit') {
+        totalCollected += sale.totalAmount;
+      } else {
+        const status = debtMap.get(sale.id);
+        if (status === 'paid') {
+          totalCollected += sale.totalAmount;
+        } else {
+          totalPending += sale.totalAmount;
+        }
+      }
+    });
 
     return {
       month: format(startDate, 'MMMM yyyy'),
