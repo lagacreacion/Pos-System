@@ -13,6 +13,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const { user } = useAuth();
   const isLoginPage = pathname === '/login';
 
+  /*
+  // TEMPORALMENTE DESACTIVADO
   useEffect(() => {
     const handleAutomaticMigration = async () => {
       if (!user || isLoginPage) return;
@@ -25,7 +27,6 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           const updatedCount = await migrateExistingDataToUser(user.uid);
           localStorage.setItem(migrationKey, 'true');
           
-          // If we actually merged data, we must do a full reload to ensure all hooks refetch
           if (updatedCount > 0) {
             window.location.reload();
           }
@@ -35,10 +36,10 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       }
     };
 
-    // TEMPORALMENTE DESACTIVADO: Para evitar que un usuario robe los datos 
-    // de los otros clientes de la base de datos compartida.
     // handleAutomaticMigration();
   }, [user, isLoginPage, router]);
+  */
+
 
   if (isLoginPage) {
     return <main className="min-h-screen">{children}</main>;
