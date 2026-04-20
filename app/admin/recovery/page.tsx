@@ -130,7 +130,7 @@ export default function AdminRecoveryPage() {
         <div className="bg-yellow-50 border border-yellow-100 p-6 rounded-xl space-y-4">
           <h3 className="font-bold text-yellow-900">1. Buscar Datos de Origen</h3>
           <p className="text-sm text-yellow-800">
-            ¿De quién provienen los datos? Si dejas esto en blanco, el sistema buscará datos "huérfanos". Si tus clientes perdieron sus datos porque su ID cambió, pega aquí el <strong>ID ANTIGUO</strong>.
+            ¿De quién provienen los datos? Si dejas esto en blanco, el sistema buscará datos &quot;huérfanos&quot;. Si tus clientes perdieron sus datos porque su ID cambió, pega aquí el <strong>ID ANTIGUO</strong>.
           </p>
           <Input 
             label="Source User ID (Origen, opcional)"
