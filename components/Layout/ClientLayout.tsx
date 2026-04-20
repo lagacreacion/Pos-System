@@ -25,9 +25,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           const updatedCount = await migrateExistingDataToUser(user.uid);
           localStorage.setItem(migrationKey, 'true');
           
-          // If we actually merged data, we should refresh to show it
+          // If we actually merged data, we must do a full reload to ensure all hooks refetch
           if (updatedCount > 0) {
-            router.refresh();
+            window.location.reload();
           }
         } catch (error) {
           console.error("Error en migración automática:", error);
