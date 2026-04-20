@@ -24,6 +24,7 @@ export const salesService = {
     const querySnapshot = await getDocs(
       query(
         collection(db, 'sales'),
+        where('userId', '==', user.uid),
         orderBy('date', 'desc')
       )
     );
@@ -41,6 +42,7 @@ export const salesService = {
     const querySnapshot = await getDocs(
       query(
         collection(db, 'sales'),
+        where('userId', '==', user.uid),
         where('customerId', '==', customerId),
         orderBy('date', 'desc')
       )
@@ -59,6 +61,7 @@ export const salesService = {
     const querySnapshot = await getDocs(
       query(
         collection(db, 'sales'),
+        where('userId', '==', user.uid),
         where('date', '>=', startDate),
         where('date', '<=', endDate),
         orderBy('date', 'desc')

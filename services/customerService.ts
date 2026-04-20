@@ -18,7 +18,9 @@ export const customerService = {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuario no autenticado");
 
-    const querySnapshot = await getDocs(collection(db, 'customers'));
+    const querySnapshot = await getDocs(
+      query(collection(db, 'customers'), where('userId', '==', user.uid))
+    );
     return querySnapshot.docs.map(d => ({
       id: d.id,
       ...d.data(),
