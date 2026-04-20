@@ -79,9 +79,12 @@ export const customerService = {
   },
 
   async updateDebt(id: string, amount: number): Promise<void> {
+    const customer = await this.getById(id);
+    if (!customer) return;
+
     const docRef = doc(db, 'customers', id);
     await updateDoc(docRef, {
-      totalDebt: amount,
+      totalDebt: (customer.totalDebt || 0) + amount,
     });
   },
 };
