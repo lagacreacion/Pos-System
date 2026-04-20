@@ -1,6 +1,5 @@
 import { 
-  db, 
-  auth 
+  db
 } from './firebase';
 import { 
   collection, 
