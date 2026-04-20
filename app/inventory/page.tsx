@@ -15,6 +15,10 @@ export default function InventoryPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  const sortedProducts = [...products].sort((a, b) => 
+    a.name.localeCompare(b.name)
+  );
+
   const handleCreateProduct = async (formData: any) => {
     try {
       if (selectedProduct) {
@@ -102,7 +106,7 @@ export default function InventoryPage() {
               </div>
             ) : (
               <ProductList
-                products={products}
+                products={sortedProducts}
                 onDelete={handleDeleteProduct}
                 onEdit={handleEdit}
               />

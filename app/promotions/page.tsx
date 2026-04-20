@@ -15,6 +15,10 @@ export default function PromotionsPage() {
   const [showForm, setShowForm] = useState(false);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  const sortedPromotions = [...promotions].sort((a, b) => 
+    a.name.localeCompare(b.name)
+  );
+
   const handleCreatePromotion = async (formData: any) => {
     try {
       await createPromotion(formData);
@@ -67,7 +71,7 @@ export default function PromotionsPage() {
           <div className="text-center py-8 text-gray-500">No hay promociones</div>
         ) : (
           <PromotionList
-            promotions={promotions}
+            promotions={sortedPromotions}
             onDelete={handleDeletePromotion}
           />
         )}

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { CustomerList } from '@/components/Customers/CustomerList';
 import { CustomerForm } from '@/components/Customers/CustomerForm';
 import { useCustomers } from '@/hooks/useCustomers';
@@ -13,6 +14,13 @@ export default function CustomersPage() {
   const [showForm, setShowForm] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredAndSortedCustomers = [...customers]
+    .filter(customer => 
+      customer.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const handleSubmitCustomer = async (formData: any) => {
     try {
@@ -78,10 +86,18 @@ export default function CustomersPage() {
       {error && <Alert type="error" message={error} />}
 
       <div className="bg-white rounded-3xl border-2 border-gray-50 shadow-sm overflow-hidden">
-        <div className="p-4 sm:p-6 border-b border-gray-50 bg-gray-50/50 flex justify-between items-center">
+        <div className="p-4 sm:p-6 border-b border-gray-50 bg-gray-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <h2 className="text-lg sm:text-xl font-black text-gray-800">
-            Directorio <span className="text-blue-600 ml-1">({customers.length})</span>
+            Directorio <span className="text-blue-600 ml-1">({filteredAndSortedCustomers.length})</span>
           </h2>
+          <div className="w-full md:w-72">
+            <Input
+              placeholder="🔍 Buscar cliente..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="bg-white border-2 border-gray-100 rounded-xl focus:border-blue-500 transition-colors"
+            />
+          </div>
         </div>
         <div className="p-2 sm:p-6">
           {loading ? (
@@ -97,7 +113,7 @@ export default function CustomersPage() {
             </div>
           ) : (
             <CustomerList
-              customers={customers}
+              customers={filteredAndSortedCustomers}
               onDelete={handleDeleteCustomer}
               onEdit={handleEdit}
             />
