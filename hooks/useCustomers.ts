@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Customer } from '@/types';
 import { customerService } from '@/services/customerService';
+import { useAuth } from './useAuth';
 
 export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -22,9 +23,13 @@ export const useCustomers = () => {
     }
   };
 
+  const { user } = useAuth();
+
   useEffect(() => {
-    fetchCustomers();
-  }, []);
+    if (user) {
+      fetchCustomers();
+    }
+  }, [user]);
 
   const createCustomer = async (customer: Omit<Customer, 'id' | 'createdAt' | 'totalDebt' | 'totalSpent'>) => {
     try {

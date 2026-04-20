@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Product } from '@/types';
 import { productService } from '@/services/productService';
+import { useAuth } from './useAuth';
 
 export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -22,9 +23,13 @@ export const useProducts = () => {
     }
   };
 
+  const { user } = useAuth();
+
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    if (user) {
+      fetchProducts();
+    }
+  }, [user]);
 
   const createProduct = async (product: Omit<Product, 'id' | 'createdAt'>) => {
     try {

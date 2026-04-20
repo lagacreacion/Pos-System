@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Promotion } from '@/types';
 import { promotionService } from '@/services/promotionService';
+import { useAuth } from './useAuth';
 
 export const usePromotions = () => {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
@@ -22,9 +23,13 @@ export const usePromotions = () => {
     }
   };
 
+  const { user } = useAuth();
+
   useEffect(() => {
-    fetchPromotions();
-  }, []);
+    if (user) {
+      fetchPromotions();
+    }
+  }, [user]);
 
   const createPromotion = async (promotion: Omit<Promotion, 'id' | 'createdAt'>) => {
     try {

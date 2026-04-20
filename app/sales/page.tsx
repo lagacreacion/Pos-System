@@ -18,6 +18,10 @@ export default function SalesPage() {
   const { createDebt } = useDebts();
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  const sortedProducts = [...products].sort((a, b) => a.name.localeCompare(b.name));
+  const sortedPromotions = [...promotions].sort((a, b) => a.name.localeCompare(b.name));
+  const sortedCustomers = [...customers].sort((a, b) => a.name.localeCompare(b.name));
+
   const handleCreateCustomer = async (name: string, phone?: string) => {
     try {
       await createCustomer({ name, phone });
@@ -90,9 +94,9 @@ export default function SalesPage() {
       )}
 
       <SalesForm
-        products={products}
-        promotions={promotions}
-        customers={customers}
+        products={sortedProducts}
+        promotions={sortedPromotions}
+        customers={sortedCustomers}
         onCreateSale={handleCreateSale}
         onCreateCustomer={handleCreateCustomer}
       />

@@ -23,6 +23,11 @@ export const CustomerSelector = ({
   const [newCustomerName, setNewCustomerName] = useState('');
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredCustomers = customers.filter(c => 
+    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleCreateCustomer = async () => {
     try {
@@ -58,6 +63,13 @@ export const CustomerSelector = ({
         </div>
       ) : (
         <div className="space-y-3 p-1">
+          <Input
+            placeholder="🔍 Buscar cliente..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="bg-gray-50 border-gray-100 h-10 text-sm"
+            fullWidth
+          />
           <div className="relative group">
             <select
               onChange={e => {
@@ -68,7 +80,7 @@ export const CustomerSelector = ({
               defaultValue=""
             >
               <option value="" disabled>👥 Seleccionar cliente...</option>
-              {customers.map(customer => (
+              {filteredCustomers.map(customer => (
                 <option key={customer.id} value={customer.id}>
                   {customer.name} {customer.totalDebt > 0 ? `(Debe: $${customer.totalDebt})` : ''}
                 </option>
