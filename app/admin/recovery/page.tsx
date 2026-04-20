@@ -10,6 +10,7 @@ import { Alert } from '@/components/ui/Alert';
 const COLLECTIONS = ['products', 'sales', 'customers', 'debts', 'promotions'];
 
 export default function AdminRecoveryPage() {
+  const [sourceId, setSourceId] = useState('');
   const [targetId, setTargetId] = useState('');
   const [stats, setStats] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
@@ -21,7 +22,13 @@ export default function AdminRecoveryPage() {
     try {
       for (const col of COLLECTIONS) {
         const snap = await getDocs(collection(db, col));
-        const orphans = snap.docs.filter(d => !d.data().userId).length;
+        const orphans = snap.docs.filter(d => {
+          const data = d.data();
+          if (sourceId.trim()) {
+            return data.userId === sourceId.trim();
+          }
+          return !data.userId;
+        }).length;
         currStats[col] = orphans;
       }
       setStats(currStats);
@@ -35,7 +42,7 @@ export default function AdminRecoveryPage() {
 
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [sourceId]);
 
   const totalOrphans = Object.values(stats).reduce((a, b) => a + b, 0);
 
@@ -46,7 +53,7 @@ export default function AdminRecoveryPage() {
     }
     
     if (totalOrphans === 0) {
-      setAlert({ type: 'warning', message: 'No hay datos huérfanos para procesar.' });
+      setAlert({ type: 'warning', message: 'No hay datos para procesar con el origen seleccionado.' });
       return;
     }
 
@@ -64,7 +71,8 @@ export default function AdminRecoveryPage() {
         
         for (const d of snapshot.docs) {
           const data = d.data();
-          if (!data.userId) {
+          const matchCondition = sourceId.trim() ? data.userId === sourceId.trim() : !data.userId;
+          if (matchCondition) {
             if (mode === 'move') {
               // Move: Update the document with the new userId
               const docRef = doc(db, colName, d.id);
@@ -93,8 +101,8 @@ export default function AdminRecoveryPage() {
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-8 fade-in">
       <div>
-        <h1 className="text-3xl font-black text-gray-900 tracking-tight">Panel de Recuperación</h1>
-        <p className="text-gray-500 font-medium">Asigna datos antiguos (sin dueño) a usuarios específicos.</p>
+        <h1 className="text-3xl font-black text-gray-900 tracking-tight">Panel de Recuperación / Traspaso</h1>
+        <p className="text-gray-500 font-medium">Transfiere datos de un ID antiguo a un ID nuevo, o asigna datos huérfanos a usuarios específicos.</p>
       </div>
 
       {alert && (
@@ -115,14 +123,28 @@ export default function AdminRecoveryPage() {
             ))}
           </div>
           <p className="text-sm text-gray-500 mt-4 text-center border-t border-gray-50 pt-4">
-            Total general: <strong className="text-gray-900">{totalOrphans} registros sin dueño</strong>
+            Total general: <strong className="text-gray-900">{totalOrphans} registros encontrados</strong>
           </p>
         </div>
 
+        <div className="bg-yellow-50 border border-yellow-100 p-6 rounded-xl space-y-4">
+          <h3 className="font-bold text-yellow-900">1. Buscar Datos de Origen</h3>
+          <p className="text-sm text-yellow-800">
+            ¿De quién provienen los datos? Si dejas esto en blanco, el sistema buscará datos "huérfanos". Si tus clientes perdieron sus datos porque su ID cambió, pega aquí el <strong>ID ANTIGUO</strong>.
+          </p>
+          <Input 
+            label="Source User ID (Origen, opcional)"
+            placeholder="Dejar en blanco para buscar huérfanos, o pegar ID viejo..."
+            value={sourceId}
+            onChange={(e) => setSourceId(e.target.value)}
+            fullWidth
+          />
+        </div>
+
         <div className="bg-blue-50 border border-blue-100 p-6 rounded-xl space-y-4">
-          <h3 className="font-bold text-blue-900">Asignar Datos a un Cliente</h3>
+          <h3 className="font-bold text-blue-900">2. Asignar al Nuevo Cliente</h3>
           <p className="text-sm text-blue-800">
-            Ingresa el ID del usuario de Firebase (ej: <code>LUjpDNpeWgUikBbhmT4hbMr2TxF3</code>) al que deseas entregarle estos datos.
+            Ingresa el <strong>ID NUEVO / ACTUAL</strong> del usuario de Firebase al que deseas entregarle estos datos.
           </p>
           
           <Input 
