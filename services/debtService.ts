@@ -21,7 +21,6 @@ export const debtService = {
     const querySnapshot = await getDocs(
       query(
         collection(db, 'debts'),
-        where('userId', '==', user.uid),
         orderBy('dueDate', 'asc')
       )
     );
@@ -40,7 +39,6 @@ export const debtService = {
     const querySnapshot = await getDocs(
       query(
         collection(db, 'debts'),
-        where('userId', '==', user.uid),
         where('customerId', '==', customerId),
         orderBy('dueDate', 'asc')
       )
@@ -60,7 +58,6 @@ export const debtService = {
     const querySnapshot = await getDocs(
       query(
         collection(db, 'debts'),
-        where('userId', '==', user.uid),
         where('status', '==', 'pending'),
         orderBy('dueDate', 'asc')
       )
@@ -104,7 +101,6 @@ export const debtService = {
     const snap = await getDocs(
       query(
         collection(db, 'debts'),
-        where('userId', '==', user.uid),
         where('saleId', '==', saleId)
       )
     );
