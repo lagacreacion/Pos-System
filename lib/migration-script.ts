@@ -19,7 +19,11 @@ import {
  */
 
 const COLLECTIONS_TO_MIGRATE = [
-  'products'
+  'products',
+  'sales',
+  'customers',
+  'debts',
+  'promotions'
 ];
 
 export async function migrateExistingDataToUser(targetUserId: string) {

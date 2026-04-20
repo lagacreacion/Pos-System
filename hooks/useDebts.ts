@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Debt } from '@/types';
 import { debtService } from '@/services/debtService';
+import { useAuth } from './useAuth';
 
 export const useDebts = () => {
   const [debts, setDebts] = useState<Debt[]>([]);
@@ -22,9 +23,13 @@ export const useDebts = () => {
     }
   };
 
+  const { user } = useAuth();
+
   useEffect(() => {
-    fetchDebts();
-  }, []);
+    if (user) {
+      fetchDebts();
+    }
+  }, [user]);
 
   const createDebt = async (debt: Omit<Debt, 'id' | 'createdAt'>) => {
     try {
