@@ -35,7 +35,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       }
     };
 
-    handleAutomaticMigration();
+    // TEMPORALMENTE DESACTIVADO: Para evitar que un usuario robe los datos 
+    // de los otros clientes de la base de datos compartida.
+    // handleAutomaticMigration();
   }, [user, isLoginPage, router]);
 
   if (isLoginPage) {
