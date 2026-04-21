@@ -41,6 +41,8 @@ export interface Sale {
   totalAmount: number;
   paymentMethod: 'cash' | 'transfer' | 'credit';
   date: Date;
+  month?: number; // 1-12
+  year?: number;  // YYYY
   debtId?: string;
 }
 
@@ -49,9 +51,18 @@ export interface Debt {
   customerId: string;
   saleId: string;
   amount: number;
+  paidAmount: number;
   dueDate: Date;
-  status: 'pending' | 'paid';
+  status: 'pending' | 'partial' | 'paid';
   createdAt: Date;
+}
+
+export interface Payment {
+  id: string;
+  debtId: string;
+  amount: number;
+  date: Date;
+  note?: string;
 }
 
 export interface DailyReport {

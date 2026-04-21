@@ -52,11 +52,27 @@ export const useReports = () => {
     }
   };
 
+  const getYearlyReport = async (year: number) => {
+    try {
+      setError(null);
+      setLoading(true);
+      const reports = await reportService.getYearlyReport(year);
+      return reports;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al cargar reporte anual';
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     error,
     getDailyReport,
     getMonthlyReport,
+    getYearlyReport,
     getAnalytics,
   };
 };

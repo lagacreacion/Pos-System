@@ -10,8 +10,8 @@ export const useDebts = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDebts = async () => {
-    setLoading(true);
+  const fetchDebts = async (silent = false) => {
+    if (!silent) setLoading(true);
     setError(null);
     try {
       const data = await debtService.getAll();
@@ -19,7 +19,7 @@ export const useDebts = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar deudas');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -31,15 +31,37 @@ export const useDebts = () => {
     }
   }, [user]);
 
-  const createDebt = async (debt: Omit<Debt, 'id' | 'createdAt'>) => {
+  const createDebt = async (debt: Omit<Debt, 'id' | 'createdAt' | 'paidAmount' | 'status'>, initialPayment: number = 0) => {
     try {
       setError(null);
-      const id = await debtService.create(debt);
-      const newDebt = { ...debt, id, createdAt: new Date() };
-      setDebts([...debts, newDebt]);
+      const id = await debtService.create(debt, initialPayment);
+      await fetchDebts(true);
       return id;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al crear deuda';
+      setError(message);
+      throw err;
+    }
+  };
+
+  const addPayment = async (debtId: string, amount: number, note?: string) => {
+    try {
+      setError(null);
+      await debtService.addPayment(debtId, amount, note);
+      await fetchDebts(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al registrar abono';
+      setError(message);
+      throw err;
+    }
+  };
+
+  const getPayments = async (debtId: string) => {
+    try {
+      setError(null);
+      return await debtService.getPayments(debtId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al cargar abonos';
       setError(message);
       throw err;
     }
@@ -49,11 +71,9 @@ export const useDebts = () => {
     try {
       setError(null);
       await debtService.markAsPaid(id);
-      setDebts(
-        debts.map(d => (d.id === id ? { ...d, status: 'paid' } : d))
-      );
+      await fetchDebts(true);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error al marcar como pagado';
+      const message = err instanceof Error ? err.message : 'Error al liquidar deuda';
       setError(message);
       throw err;
     }
@@ -63,7 +83,7 @@ export const useDebts = () => {
     try {
       setError(null);
       await debtService.delete(id);
-      setDebts(debts.filter(d => d.id !== id));
+      await fetchDebts(true);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al eliminar deuda';
       setError(message);
@@ -77,6 +97,8 @@ export const useDebts = () => {
     error,
     fetchDebts,
     createDebt,
+    addPayment,
+    getPayments,
     markAsPaid,
     deleteDebt,
   };

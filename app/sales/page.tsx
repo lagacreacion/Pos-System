@@ -37,7 +37,8 @@ export default function SalesPage() {
     items: CartItem[],
     paymentMethod: 'cash' | 'transfer' | 'credit',
     customerId?: string,
-    dueDate?: Date
+    dueDate?: Date,
+    initialPayment?: number
   ) => {
     try {
       const saleId = await createSale({
@@ -55,8 +56,7 @@ export default function SalesPage() {
           saleId,
           amount: items.reduce((sum, item) => sum + item.price * item.quantity, 0),
           dueDate,
-          status: 'pending',
-        });
+        }, initialPayment);
       }
 
       setAlert({ type: 'success', message: 'Venta registrada correctamente' });

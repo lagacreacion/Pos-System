@@ -4,17 +4,19 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/Input';
 
 interface PaymentMethodProps {
-  onMethodSelect: (method: 'cash' | 'transfer' | 'credit', dueDate?: Date) => void;
+  onMethodSelect: (method: 'cash' | 'transfer' | 'credit', dueDate?: Date, initialPayment?: number) => void;
 }
 
 export const PaymentMethod = ({ onMethodSelect }: PaymentMethodProps) => {
   const [selectedMethod, setSelectedMethod] = useState<'cash' | 'transfer' | 'credit' | null>(null);
   const [dueDate, setDueDate] = useState('');
+  const [initialPayment, setInitialPayment] = useState('');
 
   const handleMethodChange = (method: 'cash' | 'transfer' | 'credit') => {
     setSelectedMethod(method);
+    const initialAmt = parseFloat(initialPayment) || 0;
     if (method === 'credit' && dueDate) {
-      onMethodSelect(method, new Date(dueDate));
+      onMethodSelect(method, new Date(dueDate), initialAmt);
     } else if (method !== 'credit') {
       onMethodSelect(method);
     }
@@ -22,14 +24,24 @@ export const PaymentMethod = ({ onMethodSelect }: PaymentMethodProps) => {
 
   const handleDueDateChange = (date: string) => {
     setDueDate(date);
+    const initialAmt = parseFloat(initialPayment) || 0;
     if (selectedMethod === 'credit') {
-      onMethodSelect('credit', new Date(date));
+      onMethodSelect('credit', new Date(date), initialAmt);
+    }
+  };
+
+  const handleInitialPaymentChange = (amount: string) => {
+    setInitialPayment(amount);
+    const initialAmt = parseFloat(amount) || 0;
+    if (selectedMethod === 'credit' && dueDate) {
+      onMethodSelect('credit', new Date(dueDate), initialAmt);
     }
   };
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-2">
+        {/* ... (buttons remain the same) ... */}
         <button
           type="button"
           onClick={() => handleMethodChange('cash')}
@@ -48,13 +60,6 @@ export const PaymentMethod = ({ onMethodSelect }: PaymentMethodProps) => {
             <div className={`font-bold ${selectedMethod === 'cash' ? 'text-blue-900' : 'text-gray-700'}`}>Efectivo</div>
             <div className="text-xs text-gray-500 font-medium">Pago inmediato</div>
           </div>
-          {selectedMethod === 'cash' && (
-            <div className="ml-auto text-blue-600">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-            </div>
-          )}
         </button>
 
         <button
@@ -75,13 +80,6 @@ export const PaymentMethod = ({ onMethodSelect }: PaymentMethodProps) => {
             <div className={`font-bold ${selectedMethod === 'transfer' ? 'text-blue-900' : 'text-gray-700'}`}>Transferencia</div>
             <div className="text-xs text-gray-500 font-medium">Mercado Pago / Banco</div>
           </div>
-          {selectedMethod === 'transfer' && (
-            <div className="ml-auto text-blue-600">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-            </div>
-          )}
         </button>
 
         <button
@@ -102,26 +100,33 @@ export const PaymentMethod = ({ onMethodSelect }: PaymentMethodProps) => {
             <div className={`font-bold ${selectedMethod === 'credit' ? 'text-orange-900' : 'text-gray-700'}`}>Crédito (Fiado)</div>
             <div className="text-xs text-gray-500 font-medium">Pago a futuro</div>
           </div>
-          {selectedMethod === 'credit' && (
-            <div className="ml-auto text-orange-600">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-            </div>
-          )}
         </button>
       </div>
 
       {selectedMethod === 'credit' && (
-        <div className="mt-4 p-4 bg-orange-50 rounded-xl border border-orange-100 animate-in fade-in slide-in-from-top-2">
+        <div className="mt-4 p-4 bg-orange-50 rounded-2xl border-2 border-orange-100 space-y-4 animate-in fade-in slide-in-from-top-2">
           <Input
-            label="¿Cuándo pagará el cliente?*"
+            label="¿Cuándo pagará el resto?*"
             type="date"
             value={dueDate}
             onChange={e => handleDueDateChange(e.target.value)}
             fullWidth
-            className="border-orange-200 focus:border-orange-500"
+            className="bg-white border-2 border-orange-100 focus:border-orange-500 rounded-xl"
           />
+          <Input
+            label="Abono Inicial (Opcional)"
+            type="number"
+            placeholder="Ej: 15000"
+            value={initialPayment}
+            onChange={e => handleInitialPaymentChange(e.target.value)}
+            fullWidth
+            className="bg-white border-2 border-orange-100 focus:border-orange-500 rounded-xl"
+          />
+          {initialPayment && (
+            <p className="text-[10px] text-orange-600 font-bold px-1">
+              * Se registrará un pago inicial de {initialPayment}
+            </p>
+          )}
         </div>
       )}
     </div>

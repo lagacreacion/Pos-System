@@ -18,7 +18,8 @@ interface SalesFormProps {
     items: CartItem[],
     paymentMethod: 'cash' | 'transfer' | 'credit',
     customerId?: string,
-    dueDate?: Date
+    dueDate?: Date,
+    initialPayment?: number
   ) => Promise<void>;
   onCreateCustomer: (name: string, phone?: string) => Promise<void>;
 }
@@ -33,6 +34,7 @@ export const SalesForm = ({
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'credit' | null>(null);
   const [dueDate, setDueDate] = useState<Date | undefined>();
+  const [initialPayment, setInitialPayment] = useState<number | undefined>();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -121,12 +123,14 @@ export const SalesForm = ({
         cartItems,
         paymentMethod,
         selectedCustomer?.id,
-        dueDate
+        dueDate,
+        initialPayment
       );
 
       setCartItems([]);
       setPaymentMethod(null);
       setDueDate(undefined);
+      setInitialPayment(undefined);
       setSelectedCustomer(null);
       setAlert({ type: 'success', message: 'Venta realizada correctamente' });
 
@@ -266,9 +270,10 @@ export const SalesForm = ({
           {/* Payment */}
           <Card title="Método de Pago">
             <PaymentMethod
-              onMethodSelect={(method, date) => {
+              onMethodSelect={(method, date, initial) => {
                 setPaymentMethod(method);
                 setDueDate(date);
+                setInitialPayment(initial);
               }}
             />
           </Card>

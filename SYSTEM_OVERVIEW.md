@@ -1,107 +1,138 @@
-# 📊 Reporte del Sistema: Ventas e Inventario (POS)
+# 📋 Manual Técnico y Operacional: Pos-System (v2.0)
 
-Este documento proporciona una visión general organizada de todas las funcionalidades, arquitectura y componentes técnicos de la aplicación.
-
-## 🌟 Resumen del Proyecto
-La aplicación es un Sistema de Punto de Venta (POS) moderno, diseñado para gestionar ventas, inventarios, promociones, clientes y reportes financieros de manera eficiente. Recientemente ha sido actualizado a una **arquitectura multi-usuario**, permitiendo que múltiples negocios o usuarios utilicen el mismo sistema manteniendo sus datos aislados de forma segura.
+Este documento es la fuente oficial de verdad para el desarrollo, mantenimiento y operación del sistema de Punto de Venta (POS) multi-usuario.
 
 ---
 
-## 🛠️ Stack Tecnológico
-- **Framework**: [Next.js 14](https://nextjs.org/) (App Router)
-- **Lenguaje**: [TypeScript](https://www.typescriptlang.org/)
-- **Base de Datos & Auth**: [Firebase](https://firebase.google.com/) (Firestore & Authentication)
-- **Estilos**: [Tailwind CSS](https://tailwindcss.com/)
-- **Iconografía**: [Lucide React](https://lucide.dev/)
-- **Visualización de Datos**: [Recharts](https://recharts.org/)
+## 1. 🏗️ Arquitectura del Sistema
+
+El sistema está construido siguiendo principios modernos de aplicaciones web escalables y seguras.
+
+### Stack Tecnológico
+- **Frontend**: Next.js 14 (App Router) con TypeScript.
+- **Backend-as-a-Service**: Firebase 10.
+    - **Firestore**: Base de datos NoSQL para almacenamiento en tiempo real.
+    - **Authentication**: Gestión de sesiones y protección de identidad.
+- **Estilos**: Tailwind CSS para una interfaz reactiva y premium.
+- **Gráficos**: Recharts para visualización de datos financieros.
+
+### Modelo Multi-usuario
+El sistema utiliza una arquitectura de **Colecciones Planas con Filtrado por Dueño**:
+1. Cada documento en Firestore tiene un campo `userId`.
+2. Los servicios del sistema inyectan automáticamente el `uid` del usuario autenticado en todas las consultas.
+3. Esto garantiza que el Usuario A jamás pueda ver los productos, ventas o clientes del Usuario B, incluso si están en la misma base de datos.
 
 ---
 
-## 📁 Estructura de Módulos
+## 2. 📁 Mapa del Proyecto (Estructura de Carpetas)
 
-### 1. 🛒 Punto de Venta (POS)
-El núcleo de la aplicación.
-- **Ubicación**: `/app/sales` y `/services/salesService.ts`
-- **Funciones**:
-  - Selección rápida de productos y promociones.
-  - Búsqueda en tiempo real.
-  - Gestión de carrito de compras.
-  - Múltiples métodos de pago (Efectivo, Transferencia, Crédito).
-  - Integración con el sistema de cuentas por cobrar (Deudas).
-
-### 2. 📦 Gestión de Inventario
-Control total sobre los productos.
-- **Ubicación**: `/app/inventory` y `/services/productService.ts`
-- **Funciones**:
-  - CRUD completo de productos (Crear, Leer, Actualizar, Borrar).
-  - Control de stock dinámico.
-  - Alertas visuales de inventario bajo.
-
-### 3. 🏷️ Promociones y Combos
-Flexibilidad en precios.
-- **Ubicación**: `/app/promotions` y `/services/promotionService.ts`
-- **Funciones**:
-  - Creación de combos que agrupan múltiples productos.
-  - Precios especiales para promociones.
-  - Descuentos por volumen.
-
-### 4. 👥 Gestión de Clientes
-Base de datos de compradores.
-- **Ubicación**: `/app/customers` y `/services/customerService.ts`
-- **Funciones**:
-  - Registro de datos personales y contacto.
-  - Historial de transacciones vinculado.
-
-### 5. 💸 Cuentas por Cobrar (Deudas)
-Control de ventas a crédito.
-- **Ubicación**: `/app/debts` y `/services/debtService.ts`
-- **Funciones**:
-  - Seguimiento automático de ventas marcadas como "Crédito".
-  - Gestión de pagos parciales.
-  - Alertas de deudas pendientes.
-
-### 6. 📈 Reportes y Analíticas
-Visibilidad financiera.
-- **Ubicación**: `/app/daily-report`, `/app/monthly-report`, `/app/analytics`, y `/services/reportService.ts`
-- **Funciones**:
-  - **Reporte Diario**: Resumen detallado de ventas por fecha.
-  - **Reporte Mensual**: Comparativa de ingresos y ventas por mes.
-  - **Analíticas**: Gráficos interactivos de rendimiento, productos más vendidos y tendencias de ingresos.
-
----
-
-## 🔒 Arquitectura y Seguridad
-
-### Arquitectura Multi-Usuario
-El sistema utiliza un enfoque de **colecciones planas** en Firestore:
-- Cada documento (producto, venta, deuda, etc.) contiene un campo `userId`.
-- Todas las consultas están estrictamente filtradas por el ID del usuario autenticado.
-- Esto garantiza que ningún usuario pueda ver o modificar datos de otro.
-
-### Sistema de Autenticación
-- Integrado con **Firebase Auth**.
-- Flujo de login persistente.
-- Protección de rutas para asegurar que solo usuarios autenticados accedan a la gestión.
-
----
-
-## 🚀 Guía de Configuración Rápida
-
-### Variables de Entorno (`.env.local`)
-Se requieren las siguientes claves de Firebase para el funcionamiento:
-```env
-NEXT_PUBLIC_FIREBASE_API_KEY=...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
-NEXT_PUBLIC_FIREBASE_APP_ID=...
+```bash
+/
+├── app/                # Rutas y Páginas (Next.js App Router)
+├── components/         # Componentes de Interfaz organizados por módulo
+├── hooks/              # Hooks personalizados (Conexión UI <-> Lógica)
+├── lib/                # Configuración de librerías (Firebase, etc.)
+├── services/           # Lógica de Negocio y Comunicación con Firestore
+├── types/              # Definiciones de tipos TypeScript (Modelos)
+└── public/             # Activos estáticos (Imágenes, Iconos)
 ```
 
-### Comandos Útiles
-- `npm install`: Instalar dependencias.
-- `npm run dev`: Iniciar servidor de desarrollo.
-- `npm run build`: Preparar para producción.
+### Detalle de Módulos (Rutas `/app`)
+- `/sales`: Interface principal de ventas y carrito.
+- `/inventory`: Gestión de stock y catálogo de productos.
+- `/customers`: Base de datos de clientes y CRM básico.
+- `/debts`: Seguimiento de cuentas por cobrar y pagos de crédito.
+- `/promotions`: Creación de combos y ofertas.
+- `/daily-report`: Resumen de operaciones del día actual.
+- `/monthly-report`: Historial financiero mensual.
+- `/analytics`: Dashboard de gráficas e inteligencia de negocio.
 
 ---
-*Reporte generado automáticamente para documentar el estado actual de la aplicación.*
+
+## 3. 💾 Modelos de Datos (Types)
+
+El sistema maneja los siguientes objetos principales:
+
+- **Product**: `id, name, stock, price, cost, userId, createdAt`
+- **Customer**: `id, name, phone, totalDebt, totalSpent, userId`
+- **Promotion**: `id, name, finalPrice, products: {productId, quantity}[], userId`
+- **Sale**: `id, items: CartItem[], totalAmount, paymentMethod, customerId, month, year, userId`
+- **Debt**: `id, customerId, saleId, amount, paidAmount, dueDate, status (pending/partial/paid), userId`
+- **Payment**: `id, debtId, amount, date, note, userId`
+
+---
+
+## 4. ⚙️ Catálogo de Servicios (Lógica Interna)
+
+Cada archivo en `/services` contains funciones críticas para el negocio:
+
+### `productService.ts`
+- `getAll()`: Obtiene productos del usuario actual.
+- `create(product)`: Registra nuevo producto.
+- `update(id, updates)`: Modifica datos existentes.
+- `delete(id)`: Elimina producto.
+- `decrementStock(id, q)`: Resta unidades tras una venta.
+- `incrementStock(id, q)`: Suma unidades tras una cancelación.
+
+### `salesService.ts`
+- `create(sale)`: Ejecuta la transacción completa:
+    1. Registra la venta.
+    2. Descuenta stock de productos (individuales o combos).
+    3. Actualiza el gasto total del cliente.
+    4. Si es crédito, dispara la creación de una deuda con soporte para abono inicial.
+- `remove(sale)`: Revierte la transacción (restaura stock y saldos).
+
+### `debtService.ts`
+- `getAll()`: Recupera todas las deudas del usuario.
+- `addPayment(debtId, amount, note)`: Registra un abono parcial, actualiza el saldo de la deuda y ajusta el saldo total del cliente de forma atómica. Incluye protección contra pagos en exceso.
+- `getPayments(debtId)`: Obtiene el historial de abonos de una deuda específica.
+- `markAsPaid(id)`: Liquida el saldo restante de una deuda.
+
+---
+
+## 5. 🔄 Flujos Operacionales
+
+### Flujo de una Venta a Crédito con Abono
+```mermaid
+graph TD
+    A[Inicio de Venta] --> B[Seleccionar Items]
+    B --> C[Seleccionar Cliente]
+    C --> D[Elegir Crédito]
+    D --> E[Ingresar Fecha Vencimiento]
+    E --> F[Ingresar Abono Inicial - Opcional]
+    F --> G[Finalizar Venta]
+    G --> H[Crear Registro de Deuda]
+    H --> I[Registrar Abono Inicial en Historial]
+    I --> J[Actualizar Saldo Pendiente del Cliente]
+    J --> K[Descontar Inventario]
+```
+
+### Flujo de Cobranza (Abonos)
+```mermaid
+graph TD
+    A[Cliente entrega Abono] --> B[Buscar Deuda en /debts]
+    B --> C[Abrir Modal de Abonos]
+    C --> D[Ingresar Monto y Nota]
+    D --> E[Registrar Pago en Firestore]
+    E --> F[Actualizar Saldo en Deuda]
+    F --> G[Reducir Saldo Total del Cliente]
+    G --> H[Actualizar Reportes Financieros]
+```
+
+---
+
+## 6. 🔒 Seguridad y Mantenimiento
+
+### Reglas de Acceso
+> [!IMPORTANT]
+> Se ha eliminado el acceso de super-admin (`lagaalfonso1@gmail.com`). Actualmente, el sistema es 100% privado. Nadie, excepto el dueño de los datos, puede visualizarlos.
+
+### Guía de Mantenimiento (Firebase)
+Para actualizar la conexión a la base de datos:
+1. Ir a `lib/firebase.ts`.
+2. Asegurarse de que las variables de entorno en `.env.local` coincidan con las llaves de Firebase Console.
+3. Las reglas de seguridad en Firestore deben configurarse para validar el `request.auth.uid == resource.data.userId`.
+4. **Nota sobre Índices**: El sistema de abonos realiza consultas filtradas por `userId` y `debtId`. No requiere índices compuestos complejos ya que el ordenamiento se maneja en memoria para mayor compatibilidad.
+
+---
+*Manual actualizado el 21 de Abril, 2026. Sistema de abonos y pagos parciales integrado.*

@@ -21,10 +21,7 @@ export const salesService = {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuario no autenticado");
 
-    const isAdmin = user.email === 'lagaalfonso1@gmail.com';
-    const q = isAdmin
-      ? query(collection(db, 'sales'), orderBy('date', 'desc'))
-      : query(collection(db, 'sales'), where('userId', '==', user.uid), orderBy('date', 'desc'));
+    const q = query(collection(db, 'sales'), where('userId', '==', user.uid), orderBy('date', 'desc'));
 
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(d => ({
@@ -38,10 +35,7 @@ export const salesService = {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuario no autenticado");
 
-    const isAdmin = user.email === 'lagaalfonso1@gmail.com';
-    const q = isAdmin
-      ? query(collection(db, 'sales'), where('customerId', '==', customerId), orderBy('date', 'desc'))
-      : query(collection(db, 'sales'), where('userId', '==', user.uid), where('customerId', '==', customerId), orderBy('date', 'desc'));
+    const q = query(collection(db, 'sales'), where('userId', '==', user.uid), where('customerId', '==', customerId), orderBy('date', 'desc'));
 
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(d => ({
@@ -55,10 +49,21 @@ export const salesService = {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuario no autenticado");
 
-    const isAdmin = user.email === 'lagaalfonso1@gmail.com';
-    const q = isAdmin
-      ? query(collection(db, 'sales'), where('date', '>=', startDate), where('date', '<=', endDate), orderBy('date', 'desc'))
-      : query(collection(db, 'sales'), where('userId', '==', user.uid), where('date', '>=', startDate), where('date', '<=', endDate), orderBy('date', 'desc'));
+    const q = query(collection(db, 'sales'), where('userId', '==', user.uid), where('date', '>=', startDate), where('date', '<=', endDate), orderBy('date', 'desc'));
+
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data(),
+      date: d.data().date?.toDate() || new Date(),
+    })) as Sale[];
+  },
+
+  async getByYear(year: number): Promise<Sale[]> {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuario no autenticado");
+
+    const q = query(collection(db, 'sales'), where('userId', '==', user.uid), where('year', '==', year), orderBy('date', 'desc'));
 
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(d => ({
@@ -96,10 +101,13 @@ export const salesService = {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuario no autenticado");
 
+    const now = new Date();
     const docRef = await addDoc(collection(db, 'sales'), {
       ...sale,
       userId: user.uid,
       date: serverTimestamp(),
+      month: now.getMonth() + 1, // 1-12
+      year: now.getFullYear(),
     });
     return docRef.id;
   },

@@ -11,7 +11,7 @@ export const reportService = {
 
     const sales = await salesService.getByDateRange(startDate, endDate);
     const debts = await debtService.getAll();
-    const debtMap = new Map(debts.map(d => [d.saleId, d.status]));
+    const debtMap = new Map(debts.map(d => [d.saleId, d]));
 
     const totalSold = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
     
@@ -22,10 +22,12 @@ export const reportService = {
       if (sale.paymentMethod !== 'credit') {
         totalCollected += sale.totalAmount;
       } else {
-        const status = debtMap.get(sale.id);
-        if (status === 'paid') {
-          totalCollected += sale.totalAmount;
+        const debt = debtMap.get(sale.id);
+        if (debt) {
+          totalCollected += (debt.paidAmount || 0);
+          totalPending += (debt.amount - (debt.paidAmount || 0));
         } else {
+          // Fallback if debt not found
           totalPending += sale.totalAmount;
         }
       }
@@ -51,7 +53,7 @@ export const reportService = {
 
     const sales = await salesService.getByDateRange(startDate, endDate);
     const debts = await debtService.getAll();
-    const debtMap = new Map(debts.map(d => [d.saleId, d.status]));
+    const debtMap = new Map(debts.map(d => [d.saleId, d]));
 
     const totalSold = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
     
@@ -62,9 +64,10 @@ export const reportService = {
       if (sale.paymentMethod !== 'credit') {
         totalCollected += sale.totalAmount;
       } else {
-        const status = debtMap.get(sale.id);
-        if (status === 'paid') {
-          totalCollected += sale.totalAmount;
+        const debt = debtMap.get(sale.id);
+        if (debt) {
+          totalCollected += (debt.paidAmount || 0);
+          totalPending += (debt.amount - (debt.paidAmount || 0));
         } else {
           totalPending += sale.totalAmount;
         }
@@ -77,6 +80,56 @@ export const reportService = {
       totalCollected,
       totalPending,
     };
+  },
+
+  async getYearlyReport(year: number): Promise<MonthlyReport[]> {
+    const sales = await salesService.getByYear(year);
+    const debts = await debtService.getAll();
+    const debtMap = new Map(debts.map(d => [d.saleId, d]));
+
+    const months = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+
+    const reportByMonth = months.map((monthName, index) => {
+      const monthNum = index + 1;
+      const monthlySales = sales.filter(s => {
+        const date = s.date;
+        if (s.month && s.year) {
+          return s.month === monthNum && s.year === year;
+        }
+        return date.getMonth() + 1 === monthNum && date.getFullYear() === year;
+      });
+
+      let totalSold = 0;
+      let totalCollected = 0;
+      let totalPending = 0;
+
+      monthlySales.forEach(sale => {
+        totalSold += sale.totalAmount;
+        if (sale.paymentMethod !== 'credit') {
+          totalCollected += sale.totalAmount;
+        } else {
+          const debt = debtMap.get(sale.id);
+          if (debt) {
+            totalCollected += (debt.paidAmount || 0);
+            totalPending += (debt.amount - (debt.paidAmount || 0));
+          } else {
+            totalPending += sale.totalAmount;
+          }
+        }
+      });
+
+      return {
+        month: `${monthName} ${year}`,
+        totalSold,
+        totalCollected,
+        totalPending,
+      };
+    });
+
+    return reportByMonth;
   },
 
   async getAnalytics(): Promise<Analytics> {
