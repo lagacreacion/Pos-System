@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { useDebts } from '@/hooks/useDebts';
 import { useCustomers } from '@/hooks/useCustomers';
 import { formatCurrency, formatDate } from '@/lib/utils';
