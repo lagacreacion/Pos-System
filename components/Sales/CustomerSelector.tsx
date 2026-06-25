@@ -9,7 +9,7 @@ import { Modal } from '@/components/ui/Modal';
 interface CustomerSelectorProps {
   customers: Customer[];
   onSelect: (customer: Customer | null) => void;
-  onCreateNew: (name: string, phone?: string) => Promise<void>;
+  onCreateNew: (name: string, phone?: string) => Promise<Customer>;
   selectedCustomer: Customer | null;
 }
 
@@ -30,9 +30,11 @@ export const CustomerSelector = ({
   );
 
   const handleCreateCustomer = async () => {
+    if (!newCustomerName.trim()) return;
     try {
       setIsCreating(true);
-      await onCreateNew(newCustomerName, newCustomerPhone);
+      const created = await onCreateNew(newCustomerName.trim(), newCustomerPhone.trim() || undefined);
+      onSelect(created); // asociar de inmediato a la venta en curso
       setNewCustomerName('');
       setNewCustomerPhone('');
       setShowModal(false);
@@ -115,6 +117,7 @@ export const CustomerSelector = ({
             <Button
               variant="primary"
               loading={isCreating}
+              disabled={!newCustomerName.trim()}
               onClick={handleCreateCustomer}
             >
               Crear
@@ -127,7 +130,9 @@ export const CustomerSelector = ({
             label="Nombre*"
             value={newCustomerName}
             onChange={e => setNewCustomerName(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleCreateCustomer(); }}
             placeholder="Ej: Juan Pérez"
+            autoFocus
             fullWidth
           />
           <Input

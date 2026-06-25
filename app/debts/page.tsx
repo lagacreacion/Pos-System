@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { useDebts } from '@/hooks/useDebts';
 import { useCustomers } from '@/hooks/useCustomers';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { PaymentModal } from '@/components/Debts/PaymentModal';
 import { Debt } from '@/types';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 
 export default function DebtsPage() {
   const { debts, markAsPaid, deleteDebt, loading, error } = useDebts();
@@ -15,9 +17,13 @@ export default function DebtsPage() {
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<'all' | 'overdue' | 'current'>('all');
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const handleMarkAsPaid = async (id: string) => {
-    if (confirm('¿Deseas liquidar el saldo restante de esta deuda?')) {
+    const ok = await confirm({ title: 'Liquidar deuda', message: '¿Deseas liquidar el saldo restante de esta deuda?', confirmLabel: 'Liquidar', variant: 'primary' });
+    if (ok) {
       setIsActionLoading(true);
       try {
         await markAsPaid(id);
@@ -32,7 +38,8 @@ export default function DebtsPage() {
   };
 
   const handleDeleteDebt = async (id: string) => {
-    if (confirm('¿Estás seguro de que quieres eliminar esta deuda? El saldo del cliente se ajustará automáticamente.')) {
+    const ok = await confirm({ title: 'Eliminar deuda', message: 'Se eliminará la deuda y el saldo del cliente se ajustará automáticamente.', confirmLabel: 'Eliminar' });
+    if (ok) {
       setIsActionLoading(true);
       try {
         await deleteDebt(id);
@@ -50,13 +57,28 @@ export default function DebtsPage() {
     return customers.find(c => c.id === customerId)?.name || 'Cliente desconocido';
   };
 
-  const pendingDebts = debts.filter(d => d.status !== 'paid');
+  const allPending = debts.filter(d => d.status !== 'paid');
   const paidDebts = debts.filter(d => d.status === 'paid');
-  
-  const totalPending = pendingDebts.reduce((sum, d) => {
+
+  const totalPending = allPending.reduce((sum, d) => {
     const remaining = d.amount - (d.paidAmount || 0);
     return sum + remaining;
   }, 0);
+
+  const now = new Date();
+  const overdueCount = allPending.filter(d => new Date(d.dueDate) < now).length;
+
+  const pendingDebts = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return allPending.filter(d => {
+      const isOverdue = new Date(d.dueDate) < now;
+      if (filter === 'overdue' && !isOverdue) return false;
+      if (filter === 'current' && isOverdue) return false;
+      if (term && !getCustomerName(d.customerId).toLowerCase().includes(term)) return false;
+      return true;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allPending, search, filter, customers]);
 
   return (
     <div className="space-y-6 pb-20 lg:pb-0">
@@ -105,8 +127,31 @@ export default function DebtsPage() {
       </div>
 
       <div className="bg-white rounded-3xl border-2 border-gray-50 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-50 bg-gray-50/50">
-          <h2 className="text-xl font-black text-gray-800">Cuentas Pendientes</h2>
+        <div className="p-4 sm:p-6 border-b border-gray-50 bg-gray-50/50 space-y-3">
+          <div className="flex justify-between items-center gap-3">
+            <h2 className="text-lg sm:text-xl font-black text-gray-800">
+              Cuentas Pendientes <span className="text-red-600 ml-1">({pendingDebts.length})</span>
+            </h2>
+            <div className="flex gap-1 bg-white rounded-xl p-1 border border-slate-100">
+              {([['all','Todas'],['overdue',`Vencidas${overdueCount ? ` ${overdueCount}` : ''}`],['current','Al día']] as const).map(([key,label]) => (
+                <button
+                  key={key}
+                  onClick={() => setFilter(key)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap ${filter===key ? 'bg-blue-600 text-white' : 'text-slate-400'}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {allPending.length > 0 && (
+            <Input
+              placeholder="🔍 Buscar por cliente..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              fullWidth
+            />
+          )}
         </div>
         <div className="p-2 sm:p-6">
           {loading ? (
@@ -116,12 +161,48 @@ export default function DebtsPage() {
             </div>
           ) : pendingDebts.length === 0 ? (
             <div className="text-center py-20">
-              <div className="text-5xl mb-4">✨</div>
-              <p className="text-gray-400 font-black text-xl">¡Todo al día!</p>
-              <p className="text-gray-400">No hay deudas pendientes actualmente</p>
+              <div className="text-5xl mb-4">{allPending.length === 0 ? '✨' : '🔍'}</div>
+              <p className="text-gray-400 font-black text-xl">
+                {allPending.length === 0 ? '¡Todo al día!' : 'Sin resultados'}
+              </p>
+              <p className="text-gray-400">
+                {allPending.length === 0 ? 'No hay deudas pendientes actualmente' : 'Ajusta la búsqueda o el filtro'}
+              </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            {/* Tarjetas móvil */}
+            <div className="lg:hidden space-y-3">
+              {pendingDebts.map(debt => {
+                const remaining = debt.amount - (debt.paidAmount || 0);
+                const isOverdue = new Date(debt.dueDate) < new Date();
+                return (
+                  <div key={debt.id} className="bg-white p-4 rounded-2xl border-2 border-slate-100 shadow-sm">
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="min-w-0">
+                        <div className="font-black text-gray-800 truncate">{getCustomerName(debt.customerId)}</div>
+                        <span className={`inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${isOverdue ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
+                          Vence {formatDate(debt.dueDate)}
+                        </span>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Restante</div>
+                        <div className="text-xl font-black text-red-600">{formatCurrency(remaining)}</div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-3 pt-3 border-t border-slate-50">
+                      <Button variant="primary" size="sm" disabled={isActionLoading} onClick={() => setSelectedDebt(debt)} className="flex-1 rounded-xl font-black">💰 Abonar</Button>
+                      <Button variant="success" size="sm" loading={isActionLoading} disabled={isActionLoading} onClick={() => handleMarkAsPaid(debt.id)} className="flex-1 rounded-xl font-black">Liquidar</Button>
+                      <Button variant="danger" size="sm" disabled={isActionLoading} onClick={() => handleDeleteDebt(debt.id)} className="rounded-xl font-black p-2.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Tabla escritorio */}
+            <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="text-gray-400 text-[10px] font-black uppercase tracking-widest border-b-2 border-gray-50">
@@ -200,6 +281,7 @@ export default function DebtsPage() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </div>
       </div>
@@ -238,6 +320,8 @@ export default function DebtsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog />
 
       {selectedDebt && (
         <PaymentModal

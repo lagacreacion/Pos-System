@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { CustomerList } from '@/components/Customers/CustomerList';
 import { CustomerForm } from '@/components/Customers/CustomerForm';
 import { useCustomers } from '@/hooks/useCustomers';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { Customer } from '@/types';
 
 export default function CustomersPage() {
@@ -15,12 +16,14 @@ export default function CustomersPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const { confirm, ConfirmDialog } = useConfirm();
 
-  const filteredAndSortedCustomers = [...customers]
-    .filter(customer => 
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const filteredAndSortedCustomers = useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    return [...customers]
+      .filter(customer => customer.name.toLowerCase().includes(term))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [customers, searchTerm]);
 
   const handleSubmitCustomer = async (formData: any) => {
     try {
@@ -40,7 +43,8 @@ export default function CustomersPage() {
   };
 
   const handleDeleteCustomer = async (id: string) => {
-    if (confirm('¿Eliminar este cliente permanentemente?')) {
+    const ok = await confirm({ title: 'Eliminar cliente', message: '¿Eliminar este cliente permanentemente?', confirmLabel: 'Eliminar' });
+    if (ok) {
       try {
         await deleteCustomer(id);
         setAlert({ type: 'success', message: 'Cliente eliminado' });
@@ -120,6 +124,8 @@ export default function CustomersPage() {
           )}
         </div>
       </div>
+
+      <ConfirmDialog />
 
       <CustomerForm
         isOpen={showForm}

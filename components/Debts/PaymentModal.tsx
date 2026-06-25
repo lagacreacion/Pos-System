@@ -19,6 +19,7 @@ export const PaymentModal = ({ isOpen, onClose, debt }: PaymentModalProps) => {
   const [note, setNote] = useState('');
   const [payments, setPayments] = useState<Payment[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen && debt.id) {
@@ -39,10 +40,20 @@ export const PaymentModal = ({ isOpen, onClose, debt }: PaymentModalProps) => {
     }
   };
 
+  const remaining = debt.amount - (debt.paidAmount || 0);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
     const amt = parseFloat(amount);
-    if (isNaN(amt) || amt <= 0) return;
+    if (isNaN(amt) || amt <= 0) {
+      setFormError('Ingresa un monto válido mayor a 0');
+      return;
+    }
+    if (amt > remaining) {
+      setFormError(`El abono no puede superar el saldo (${formatCurrency(remaining)})`);
+      return;
+    }
 
     try {
       await addPayment(debt.id, amt, note);
@@ -51,13 +62,11 @@ export const PaymentModal = ({ isOpen, onClose, debt }: PaymentModalProps) => {
       // Delay history load slightly to allow Firebase to propagate changes if needed
       setTimeout(loadHistory, 500);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Error al registrar abono');
+      setFormError(error instanceof Error ? error.message : 'Error al registrar abono');
     }
   };
 
   if (!isOpen) return null;
-
-  const remaining = debt.amount - (debt.paidAmount || 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -96,11 +105,16 @@ export const PaymentModal = ({ isOpen, onClose, debt }: PaymentModalProps) => {
                   type="number"
                   placeholder="Ej: 5000"
                   value={amount}
-                  onChange={e => setAmount(e.target.value)}
+                  onChange={e => { setAmount(e.target.value); if (formError) setFormError(null); }}
                   fullWidth
                   required
                   className="bg-white border-2 border-gray-100 rounded-2xl text-lg font-bold"
                 />
+                {formError && (
+                  <div className="bg-red-50 border-2 border-red-100 text-red-700 text-sm font-bold px-4 py-3 rounded-2xl">
+                    {formError}
+                  </div>
+                )}
                 <Input
                   label="Nota (Opcional)"
                   placeholder="Ej: Pago en efectivo"

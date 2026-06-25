@@ -8,7 +8,7 @@ import { usePromotions } from '@/hooks/usePromotions';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useSales } from '@/hooks/useSales';
 import { useDebts } from '@/hooks/useDebts';
-import { CartItem } from '@/types';
+import { CartItem, Customer } from '@/types';
 
 export default function SalesPage() {
   const { products, loading: loadingProducts } = useProducts();
@@ -22,15 +22,9 @@ export default function SalesPage() {
   const sortedPromotions = [...promotions].sort((a, b) => a.name.localeCompare(b.name));
   const sortedCustomers = [...customers].sort((a, b) => a.name.localeCompare(b.name));
 
-  const handleCreateCustomer = async (name: string, phone?: string) => {
-    try {
-      await createCustomer({ name, phone });
-    } catch (error) {
-      setAlert({
-        type: 'error',
-        message: error instanceof Error ? error.message : 'Error al crear cliente',
-      });
-    }
+  const handleCreateCustomer = async (name: string, phone?: string): Promise<Customer> => {
+    const id = await createCustomer({ name, phone });
+    return { id, name, phone, totalDebt: 0, totalSpent: 0, createdAt: new Date() };
   };
 
   const handleCreateSale = async (
@@ -79,9 +73,9 @@ export default function SalesPage() {
   }
 
   return (
-    <div className="space-y-4 pb-20 lg:pb-0">
-      <div>
-        <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">Venta Principal</h1>
+    <div className="space-y-3">
+      <div className="hidden lg:block">
+        <h1 className="text-3xl font-black text-gray-900 tracking-tight">Venta</h1>
         <p className="text-gray-500 font-medium text-sm">Realiza ventas rápidas y eficientes</p>
       </div>
 

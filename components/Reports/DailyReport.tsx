@@ -4,6 +4,7 @@ import { DailyReport as DailyReportType, Customer, Sale } from '@/types';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 
 interface DailyReportProps {
   report: DailyReportType | null;
@@ -16,6 +17,7 @@ const paymentLabel = (m: string) =>
   m === 'cash' ? 'Efectivo' : m === 'transfer' ? 'Transferencia' : 'Crédito';
 
 export const DailyReport = ({ report, isLoading, customers = [], onDeleteSale }: DailyReportProps) => {
+  const { confirm, ConfirmDialog } = useConfirm();
   if (isLoading) {
     return <div className="text-center py-8">Cargando reporte...</div>;
   }
@@ -27,11 +29,10 @@ export const DailyReport = ({ report, isLoading, customers = [], onDeleteSale }:
   const customerName = (id?: string) =>
     id ? customers.find(c => c.id === id)?.name || 'Cliente' : 'Sin cliente';
 
-  const handleDelete = (sale: Sale) => {
+  const handleDelete = async (sale: Sale) => {
     if (!onDeleteSale) return;
-    if (confirm('¿Eliminar esta venta? Se restablecerá el stock y la deuda si existe.')) {
-      onDeleteSale(sale);
-    }
+    const ok = await confirm({ title: 'Eliminar venta', message: 'Se restablecerá el stock y la deuda si existe. ¿Continuar?', confirmLabel: 'Eliminar' });
+    if (ok) onDeleteSale(sale);
   };
 
   return (
@@ -119,6 +120,7 @@ export const DailyReport = ({ report, isLoading, customers = [], onDeleteSale }:
           </div>
         )}
       </Card>
+      <ConfirmDialog />
     </div>
   );
 };

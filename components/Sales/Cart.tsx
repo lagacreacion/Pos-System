@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useState } from 'react';
 import { CartItem } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 
@@ -9,74 +10,121 @@ interface CartProps {
   onQuantityChange: (index: number, quantity: number) => void;
 }
 
-export const Cart = ({ items, onRemove, onQuantityChange }: CartProps) => {
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+const haptic = (ms = 8) => {
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(ms);
+};
 
+/** Fila con deslizar-para-eliminar (touch) + boton eliminar visible. */
+const CartRow = ({
+  item,
+  onRemove,
+  onQuantityChange,
+}: {
+  item: CartItem;
+  onRemove: () => void;
+  onQuantityChange: (q: number) => void;
+}) => {
+  const [dragX, setDragX] = useState(0);
+  const startX = useRef<number | null>(null);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (startX.current === null) return;
+    const dx = e.touches[0].clientX - startX.current;
+    if (dx < 0) setDragX(Math.max(dx, -96));
+  };
+  const onTouchEnd = () => {
+    if (dragX < -64) {
+      haptic(12);
+      onRemove();
+    }
+    setDragX(0);
+    startX.current = null;
+  };
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl">
+      {/* Fondo rojo revelado al deslizar */}
+      <div className="absolute inset-0 bg-red-500 flex items-center justify-end pr-6">
+        <span className="text-white font-bold text-sm">Eliminar</span>
+      </div>
+
+      <div
+        className="relative bg-white p-3 border border-slate-100 flex items-center gap-3 rounded-2xl"
+        style={{ transform: `translateX(${dragX}px)`, transition: startX.current === null ? 'transform .2s ease' : 'none' }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-slate-800 leading-tight truncate">{item.name}</p>
+          <p className="text-xs font-semibold text-slate-400 mt-0.5">{formatCurrency(item.price)} c/u</p>
+        </div>
+
+        {/* Stepper de cantidad */}
+        <div className="flex items-center gap-1 bg-slate-100 rounded-full p-1 shrink-0">
+          <button
+            onClick={() => { haptic(); onQuantityChange(Math.max(1, item.quantity - 1)); }}
+            className="w-9 h-9 flex items-center justify-center bg-white rounded-full shadow-sm active:scale-90 transition-transform text-lg font-black text-slate-600"
+            aria-label="Disminuir"
+          >
+            &#8722;
+          </button>
+          <span className="w-8 text-center font-black text-slate-800 tabular-nums">{item.quantity}</span>
+          <button
+            onClick={() => { haptic(); onQuantityChange(item.quantity + 1); }}
+            className="w-9 h-9 flex items-center justify-center bg-blue-600 text-white rounded-full shadow-sm active:scale-90 transition-transform text-lg font-black"
+            aria-label="Aumentar"
+          >
+            +
+          </button>
+        </div>
+
+        <div className="w-20 text-right shrink-0">
+          <span className="text-sm font-black text-slate-900 tabular-nums">
+            {formatCurrency(item.price * item.quantity)}
+          </span>
+        </div>
+
+        {/* Eliminar directo (desktop / accesible) */}
+        <button
+          onClick={() => { haptic(12); onRemove(); }}
+          className="w-8 h-8 shrink-0 flex items-center justify-center rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+          aria-label="Quitar producto"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export const Cart = ({ items, onRemove, onQuantityChange }: CartProps) => {
   if (items.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        Carrito vacío
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-3xl mb-3">&#128722;</div>
+        <p className="text-slate-400 font-semibold">Carrito vacio</p>
+        <p className="text-slate-300 text-sm mt-1">Toca un producto para agregarlo</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1 custom-scrollbar">
-        {items.map((item, index) => (
-          <div
-            key={index}
-            className="bg-white p-4 rounded-xl border border-gray-100 flex flex-col gap-3 shadow-sm"
-          >
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <p className="font-bold text-gray-800 leading-tight">{item.name}</p>
-                <p className="text-xs font-bold text-blue-600 mt-1 uppercase tracking-wider">
-                  {formatCurrency(item.price)} unidad
-                </p>
-              </div>
-              <button
-                onClick={() => onRemove(index)}
-                className="text-gray-300 hover:text-red-500 transition-colors p-1"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="flex justify-between items-center bg-gray-50 rounded-lg p-2">
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => onQuantityChange(index, Math.max(1, item.quantity - 1))}
-                  className="w-8 h-8 flex items-center justify-center bg-white border border-gray-200 rounded-md shadow-sm active:bg-gray-100 font-black text-gray-600"
-                >
-                  -
-                </button>
-                <span className="w-10 text-center font-bold text-gray-700">{item.quantity}</span>
-                <button
-                  onClick={() => onQuantityChange(index, item.quantity + 1)}
-                  className="w-8 h-8 flex items-center justify-center bg-white border border-gray-200 rounded-md shadow-sm active:bg-gray-100 font-black text-gray-600"
-                >
-                  +
-                </button>
-              </div>
-              <div className="text-right">
-                <span className="text-sm font-black text-gray-900">
-                  {formatCurrency(item.price * item.quantity)}
-                </span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-gray-900 text-white p-4 rounded-xl shadow-lg mt-4">
-        <div className="flex justify-between items-center text-lg font-black uppercase tracking-tight">
-          <span className="text-gray-400 text-sm">Subtotal:</span>
-          <span>{formatCurrency(total)}</span>
-        </div>
-      </div>
+    <div className="space-y-2.5">
+      {items.map((item, index) => (
+        <CartRow
+          key={`${item.type}-${item.id}`}
+          item={item}
+          onRemove={() => onRemove(index)}
+          onQuantityChange={(q) => onQuantityChange(index, q)}
+        />
+      ))}
+      <p className="text-center text-[11px] text-slate-300 pt-1 lg:hidden">Desliza para eliminar</p>
     </div>
   );
 };

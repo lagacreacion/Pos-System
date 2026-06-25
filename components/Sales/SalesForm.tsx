@@ -1,9 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Product, Promotion, CartItem, Customer } from '@/types';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { Alert } from '@/components/ui/Alert';
 import { Cart } from './Cart';
 import { PaymentMethod } from './PaymentMethod';
@@ -21,8 +19,12 @@ interface SalesFormProps {
     dueDate?: Date,
     initialPayment?: number
   ) => Promise<void>;
-  onCreateCustomer: (name: string, phone?: string) => Promise<void>;
+  onCreateCustomer: (name: string, phone?: string) => Promise<Customer>;
 }
+
+const haptic = (ms = 10) => {
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(ms);
+};
 
 export const SalesForm = ({
   products,
@@ -38,55 +40,39 @@ export const SalesForm = ({
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [search, setSearch] = useState('');
+  const [cartOpen, setCartOpen] = useState(false); // hoja inferior del carrito en movil
 
   const handleAddProduct = (product: Product) => {
-    const existingItem = cartItems.find(
-      item => item.id === product.id && item.type === 'product'
-    );
-
+    const existingItem = cartItems.find(item => item.id === product.id && item.type === 'product');
     if (existingItem) {
       if (existingItem.quantity + 1 <= product.stock) {
+        haptic();
         updateCartItem(cartItems.indexOf(existingItem), existingItem.quantity + 1);
       } else {
         setAlert({ type: 'error', message: 'Stock insuficiente' });
       }
+    } else if (product.stock > 0) {
+      haptic();
+      setCartItems([
+        ...cartItems,
+        { id: product.id, name: product.name, price: product.price, quantity: 1, type: 'product', productId: product.id },
+      ]);
     } else {
-      if (product.stock > 0) {
-        setCartItems([
-          ...cartItems,
-          {
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            quantity: 1,
-            type: 'product',
-            productId: product.id,
-          },
-        ]);
-      } else {
-        setAlert({ type: 'error', message: 'Producto sin stock' });
-      }
+      setAlert({ type: 'error', message: 'Producto sin stock' });
     }
   };
 
   const handleAddPromotion = (promotion: Promotion) => {
-    const existingItem = cartItems.find(
-      item => item.id === promotion.id && item.type === 'promotion'
-    );
-
+    const existingItem = cartItems.find(item => item.id === promotion.id && item.type === 'promotion');
     if (existingItem) {
+      haptic();
       updateCartItem(cartItems.indexOf(existingItem), existingItem.quantity + 1);
     } else {
+      haptic();
       setCartItems([
         ...cartItems,
-        {
-          id: promotion.id,
-          name: promotion.name,
-          price: promotion.finalPrice,
-          quantity: 1,
-          type: 'promotion',
-          promotionId: promotion.id,
-        },
+        { id: promotion.id, name: promotion.name, price: promotion.finalPrice, quantity: 1, type: 'promotion', promotionId: promotion.id },
       ]);
     }
   };
@@ -102,203 +88,272 @@ export const SalesForm = ({
   };
 
   const handleCompletePayment = async () => {
-    if (cartItems.length === 0) {
-      setAlert({ type: 'error', message: 'Carrito vacío' });
-      return;
-    }
-
-    if (!paymentMethod) {
-      setAlert({ type: 'error', message: 'Selecciona un método de pago' });
-      return;
-    }
-
-    if (paymentMethod === 'credit' && !dueDate) {
-      setAlert({ type: 'error', message: 'Ingresa la fecha límite de pago' });
-      return;
-    }
+    if (cartItems.length === 0) { setAlert({ type: 'error', message: 'Carrito vacio' }); return; }
+    if (!paymentMethod) { setAlert({ type: 'error', message: 'Selecciona un metodo de pago' }); setCartOpen(true); return; }
+    if (paymentMethod === 'credit' && !dueDate) { setAlert({ type: 'error', message: 'Ingresa la fecha limite de pago' }); setCartOpen(true); return; }
 
     try {
       setIsLoading(true);
-      await onCreateSale(
-        cartItems,
-        paymentMethod,
-        selectedCustomer?.id,
-        dueDate,
-        initialPayment
-      );
-
+      await onCreateSale(cartItems, paymentMethod, selectedCustomer?.id, dueDate, initialPayment);
+      haptic(20);
       setCartItems([]);
       setPaymentMethod(null);
       setDueDate(undefined);
       setInitialPayment(undefined);
       setSelectedCustomer(null);
+      setCartOpen(false);
       setAlert({ type: 'success', message: 'Venta realizada correctamente' });
-
       setTimeout(() => setAlert(null), 3000);
     } catch (error) {
-      setAlert({
-        type: 'error',
-        message: error instanceof Error ? error.message : 'Error al completar venta',
-      });
+      setAlert({ type: 'error', message: error instanceof Error ? error.message : 'Error al completar venta' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const [activeTab, setActiveTab] = useState<'products' | 'cart'>('products');
+  const total = useMemo(
+    () => cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    [cartItems]
+  );
+  const itemCount = useMemo(
+    () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
+    [cartItems]
+  );
+
+  const term = search.trim().toLowerCase();
+  const visibleProducts = useMemo(
+    () => products.filter(p => (!p.stock || p.stock > 0) && (!term || p.name.toLowerCase().includes(term))),
+    [products, term]
+  );
+  const visiblePromotions = useMemo(
+    () => promotions.filter(p => !term || p.name.toLowerCase().includes(term)),
+    [promotions, term]
+  );
 
   return (
-    <div className="flex flex-col gap-4 pb-20 lg:pb-0">
-      {/* Mobile Tabs */}
-      <div className="flex lg:hidden bg-white rounded-lg p-1 shadow-sm border border-gray-200">
-        <button
-          onClick={() => setActiveTab('products')}
-          className={`flex-1 py-3 text-sm font-bold rounded-md transition-all ${
-            activeTab === 'products' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500'
-          }`}
-        >
-          🛍️ Productos
-        </button>
-        <button
-          onClick={() => setActiveTab('cart')}
-          className={`flex-1 py-3 text-sm font-bold rounded-md transition-all relative ${
-            activeTab === 'cart' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500'
-          }`}
-        >
-          🛒 Carrito
-          {cartItems.length > 0 && (
-            <span className="absolute top-2 right-4 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-white animate-pulse">
-              {cartItems.length}
-            </span>
-          )}
-        </button>
-      </div>
+    <div className="relative">
+      {alert && (
+        <div className="mb-4">
+          <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Products and Promotions */}
-        <div className={`lg:col-span-2 space-y-4 ${activeTab === 'cart' ? 'hidden lg:block' : 'block'}`}>
-          {alert && (
-            <Alert
-              type={alert.type}
-              message={alert.message}
-              onClose={() => setAlert(null)}
-            />
-          )}
-
-          {/* Products */}
-          <Card title="Productos Disponibles">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] lg:max-h-[70vh] overflow-y-auto pr-1">
-              {products.filter(p => !p.stock || p.stock > 0).map(product => (
+        {/* ============ PRODUCTOS ============ */}
+        <div className="lg:col-span-2 space-y-4 pb-40 lg:pb-0">
+          {/* Buscador fijo */}
+          <div className="sticky top-14 sm:top-16 z-20 -mx-1 px-1 py-2 bg-slate-50/95 backdrop-blur">
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg">&#128269;</span>
+              <input
+                type="text"
+                inputMode="search"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Buscar producto..."
+                className="w-full h-12 pl-11 pr-10 bg-white border-2 border-slate-100 rounded-2xl font-semibold text-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none shadow-sm"
+              />
+              {search && (
                 <button
-                  key={product.id}
-                  onClick={() => handleAddProduct(product)}
-                  className="flex items-center justify-between p-4 bg-white border-2 border-gray-100 rounded-xl hover:border-blue-500 active:scale-95 transition-all text-left group shadow-sm hover:shadow-md"
+                  onClick={() => setSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 active:scale-90"
+                  aria-label="Limpiar busqueda"
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-gray-900 truncate group-hover:text-blue-600">
-                      {product.name}
-                    </div>
-                    <div className="text-sm text-gray-500 mt-1 flex items-center">
-                      <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-bold mr-2">
-                        {formatCurrency(product.price)}
-                      </span>
-                      {product.stock !== undefined && (
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                          product.stock > 10 ? 'bg-green-50 text-green-700' : 'bg-orange-50 text-orange-700'
-                        }`}>
-                          {product.stock} en stock
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="ml-4 bg-blue-100 p-2 rounded-lg text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                  </div>
+                  &#10005;
                 </button>
-              ))}
+              )}
             </div>
-          </Card>
+          </div>
 
-          {/* Promotions */}
-          {promotions.length > 0 && (
-            <Card title="Promociones">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-64 overflow-y-auto pr-1">
-                {promotions.map(promotion => (
+          {/* Promociones */}
+          {visiblePromotions.length > 0 && (
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2 px-1">Promociones</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {visiblePromotions.map(promotion => (
                   <button
                     key={promotion.id}
                     onClick={() => handleAddPromotion(promotion)}
-                    className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-100 rounded-xl hover:border-purple-500 active:scale-95 transition-all text-left shadow-sm group"
+                    className="flex flex-col justify-between p-3 min-h-[88px] bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-100 rounded-2xl text-left active:scale-95 transition-transform shadow-sm"
                   >
+                    <span className="text-lg">&#10024;</span>
                     <div>
-                      <div className="font-bold text-purple-900 group-hover:text-purple-600">{promotion.name}</div>
-                      <div className="text-sm font-bold text-purple-700 mt-1">{formatCurrency(promotion.finalPrice)}</div>
-                    </div>
-                    <div className="bg-purple-200 p-2 rounded-lg text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                      <span className="text-xl">✨</span>
+                      <div className="font-bold text-purple-900 text-sm leading-tight line-clamp-2">{promotion.name}</div>
+                      <div className="text-sm font-black text-purple-700 mt-0.5">{formatCurrency(promotion.finalPrice)}</div>
                     </div>
                   </button>
                 ))}
               </div>
-            </Card>
+            </div>
           )}
+
+          {/* Productos */}
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2 px-1">Productos</p>
+            {visibleProducts.length === 0 ? (
+              <div className="text-center py-12 text-slate-400 font-semibold bg-white rounded-2xl border border-slate-100">
+                Sin resultados para &ldquo;{search}&rdquo;
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {visibleProducts.map(product => {
+                  const inCart = cartItems.find(i => i.id === product.id && i.type === 'product');
+                  return (
+                    <button
+                      key={product.id}
+                      onClick={() => handleAddProduct(product)}
+                      className="relative flex flex-col justify-between p-3 min-h-[88px] bg-white border-2 border-slate-100 rounded-2xl text-left active:scale-95 active:border-blue-400 transition-all shadow-sm"
+                    >
+                      {inCart && (
+                        <span className="absolute top-2 right-2 min-w-[22px] h-[22px] px-1.5 flex items-center justify-center bg-blue-600 text-white text-xs font-black rounded-full">
+                          {inCart.quantity}
+                        </span>
+                      )}
+                      <div className="font-bold text-slate-900 text-sm leading-tight line-clamp-2 pr-6">{product.name}</div>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-sm font-black text-blue-700">{formatCurrency(product.price)}</span>
+                        {product.stock !== undefined && (
+                          <span className={`text-[10px] font-bold ${product.stock > 10 ? 'text-emerald-500' : 'text-orange-500'}`}>
+                            {product.stock}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Sidebar / Cart View */}
-        <div className={`space-y-4 ${activeTab === 'products' ? 'hidden lg:block' : 'block'}`}>
-          {/* Customer */}
-          <Card title="Cliente">
-            <CustomerSelector
+        {/* ============ CARRITO DESKTOP (columna fija) ============ */}
+        <div className="hidden lg:block space-y-4">
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 sticky top-20">
+            <CartPanel
+              cartItems={cartItems}
               customers={customers}
               selectedCustomer={selectedCustomer}
-              onSelect={setSelectedCustomer}
-              onCreateNew={onCreateCustomer}
+              setSelectedCustomer={setSelectedCustomer}
+              onCreateCustomer={onCreateCustomer}
+              removeCartItem={removeCartItem}
+              updateCartItem={updateCartItem}
+              onPaymentSelect={(m, d, i) => { setPaymentMethod(m); setDueDate(d); setInitialPayment(i); }}
+              total={total}
+              isLoading={isLoading}
+              onCheckout={handleCompletePayment}
             />
-          </Card>
+          </div>
+        </div>
+      </div>
 
-          {/* Cart */}
-          <Card title="Carrito de Compras">
-            <Cart
-              items={cartItems}
-              onRemove={removeCartItem}
-              onQuantityChange={updateCartItem}
+      {/* ============ BARRA COBRAR FIJA (movil) ============ */}
+      <div
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200 px-4 pt-3"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 76px)' }}
+      >
+        <button
+          onClick={() => { if (cartItems.length > 0) { haptic(); setCartOpen(true); } }}
+          disabled={cartItems.length === 0}
+          className="w-full h-14 flex items-center justify-between px-5 rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/30 active:scale-[0.98] transition-transform disabled:bg-slate-300 disabled:shadow-none"
+        >
+          <span className="flex items-center gap-2 font-bold">
+            <span className="relative text-xl">
+              &#128722;
+              {itemCount > 0 && (
+                <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-black rounded-full">
+                  {itemCount}
+                </span>
+              )}
+            </span>
+            {cartItems.length === 0 ? 'Carrito vacio' : 'COBRAR'}
+          </span>
+          <span className="text-xl font-black tabular-nums">{formatCurrency(total)}</span>
+        </button>
+      </div>
+
+      {/* ============ HOJA INFERIOR DEL CARRITO (movil) ============ */}
+      <div
+        className={`lg:hidden fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm transition-opacity ${cartOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        onClick={() => setCartOpen(false)}
+      />
+      <div
+        className={`lg:hidden fixed bottom-0 left-0 right-0 z-[101] transition-transform duration-300 ease-out ${cartOpen ? 'translate-y-0' : 'translate-y-full'}`}
+      >
+        <div className="bg-slate-50 rounded-t-3xl shadow-2xl max-h-[88vh] flex flex-col" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+          <div className="flex justify-center pt-3 pb-1 shrink-0">
+            <div className="w-10 h-1 bg-slate-300 rounded-full" />
+          </div>
+          <div className="flex items-center justify-between px-5 py-2 shrink-0">
+            <h3 className="text-lg font-black text-slate-900">Carrito ({itemCount})</h3>
+            <button onClick={() => setCartOpen(false)} className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-200 text-slate-500 active:scale-90">&#10005;</button>
+          </div>
+          <div className="overflow-y-auto px-4 pb-4 flex-1">
+            <CartPanel
+              cartItems={cartItems}
+              customers={customers}
+              selectedCustomer={selectedCustomer}
+              setSelectedCustomer={setSelectedCustomer}
+              onCreateCustomer={onCreateCustomer}
+              removeCartItem={removeCartItem}
+              updateCartItem={updateCartItem}
+              onPaymentSelect={(m, d, i) => { setPaymentMethod(m); setDueDate(d); setInitialPayment(i); }}
+              total={total}
+              isLoading={isLoading}
+              onCheckout={handleCompletePayment}
             />
-          </Card>
-
-          {/* Payment */}
-          <Card title="Método de Pago">
-            <PaymentMethod
-              onMethodSelect={(method, date, initial) => {
-                setPaymentMethod(method);
-                setDueDate(date);
-                setInitialPayment(initial);
-              }}
-            />
-          </Card>
-
-          {/* Total and Button */}
-          <div className="sticky bottom-20 lg:bottom-4 bg-blue-600 p-6 rounded-2xl shadow-2xl text-white transform transition-all">
-            <div className="flex justify-between items-center mb-6 border-b border-blue-400 pb-4">
-              <span className="text-blue-100 font-medium">Total a Pagar</span>
-              <div className="text-3xl font-black">
-                {formatCurrency(total)}
-              </div>
-            </div>
-            <Button
-              variant="secondary"
-              fullWidth
-              loading={isLoading}
-              onClick={handleCompletePayment}
-              disabled={cartItems.length === 0}
-              className="py-4 text-lg font-bold bg-white text-blue-700 hover:bg-blue-50 border-none shadow-lg active:translate-y-1 transition-all"
-            >
-              🚀 Finalizar Venta
-            </Button>
           </div>
         </div>
       </div>
     </div>
   );
 };
+
+/** Panel reutilizable: cliente + carrito + pago + boton cobrar. */
+const CartPanel = ({
+  cartItems, customers, selectedCustomer, setSelectedCustomer, onCreateCustomer,
+  removeCartItem, updateCartItem, onPaymentSelect, total, isLoading, onCheckout,
+}: {
+  cartItems: CartItem[];
+  customers: Customer[];
+  selectedCustomer: Customer | null;
+  setSelectedCustomer: (c: Customer | null) => void;
+  onCreateCustomer: (name: string, phone?: string) => Promise<Customer>;
+  removeCartItem: (i: number) => void;
+  updateCartItem: (i: number, q: number) => void;
+  onPaymentSelect: (m: 'cash' | 'transfer' | 'credit', d?: Date, i?: number) => void;
+  total: number;
+  isLoading: boolean;
+  onCheckout: () => void;
+}) => (
+  <div className="space-y-4">
+    <Cart items={cartItems} onRemove={removeCartItem} onQuantityChange={updateCartItem} />
+
+    {cartItems.length > 0 && (
+      <>
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">Cliente</p>
+          <CustomerSelector
+            customers={customers}
+            selectedCustomer={selectedCustomer}
+            onSelect={setSelectedCustomer}
+            onCreateNew={onCreateCustomer}
+          />
+        </div>
+
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">Metodo de pago</p>
+          <PaymentMethod onMethodSelect={onPaymentSelect} />
+        </div>
+
+        <button
+          onClick={onCheckout}
+          disabled={isLoading || cartItems.length === 0}
+          className="w-full h-16 flex items-center justify-between px-6 rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/30 active:scale-[0.98] transition-transform disabled:opacity-60"
+        >
+          <span className="text-lg font-black">{isLoading ? 'Procesando...' : 'COBRAR'}</span>
+          <span className="text-2xl font-black tabular-nums">{formatCurrency(total)}</span>
+        </button>
+      </>
+    )}
+  </div>
+);

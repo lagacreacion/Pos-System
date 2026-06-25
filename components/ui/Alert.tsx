@@ -7,21 +7,29 @@ interface AlertProps {
 
 export const Alert = ({ type, message, onClose, className = '' }: AlertProps) => {
   const styles = {
-    success: 'bg-green-100 text-green-800 border-green-300',
-    error: 'bg-red-100 text-red-800 border-red-300',
-    warning: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-    info: 'bg-blue-100 text-blue-800 border-blue-300',
+    success: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    error: 'bg-red-50 text-red-800 border-red-200',
+    warning: 'bg-amber-50 text-amber-800 border-amber-200',
+    info: 'bg-blue-50 text-blue-800 border-blue-200',
+  };
+  const dot = {
+    success: 'bg-emerald-500',
+    error: 'bg-red-500',
+    warning: 'bg-amber-500',
+    info: 'bg-blue-500',
   };
 
   return (
-    <div className={`border rounded p-4 flex justify-between items-center ${styles[type]} ${className}`}>
-      <span>{message}</span>
+    <div className={`border rounded-2xl px-4 py-3.5 flex items-center gap-3 ${styles[type]} ${className}`}>
+      <span className={`w-2 h-2 rounded-full shrink-0 ${dot[type]}`} />
+      <span className="flex-1 text-sm font-semibold">{message}</span>
       {onClose && (
         <button
           onClick={onClose}
-          className="text-xl font-bold cursor-pointer"
+          className="shrink-0 w-7 h-7 flex items-center justify-center rounded-full hover:bg-black/5 text-lg font-bold leading-none transition-colors"
+          aria-label="Cerrar"
         >
-          ×
+          &times;
         </button>
       )}
     </div>

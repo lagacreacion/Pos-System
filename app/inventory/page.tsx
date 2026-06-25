@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { ProductList } from '@/components/Inventory/ProductList';
 import { ProductForm } from '@/components/Inventory/ProductForm';
 import { StockAlert } from '@/components/Inventory/StockAlert';
 import { useProducts } from '@/hooks/useProducts';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { Product } from '@/types';
 
 export default function InventoryPage() {
@@ -14,10 +16,30 @@ export default function InventoryPage() {
   const [showForm, setShowForm] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const { confirm, ConfirmDialog } = useConfirm();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'stock' | 'price'>('name');
 
-  const sortedProducts = [...products].sort((a, b) => 
-    a.name.localeCompare(b.name)
-  );
+  const sortedProducts = useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    return [...products]
+      .filter(p => p.name.toLowerCase().includes(term))
+      .sort((a, b) => {
+        if (sortBy === 'stock') return a.stock - b.stock;
+        if (sortBy === 'price') return b.price - a.price;
+        return a.name.localeCompare(b.name);
+      });
+  }, [products, searchTerm, sortBy]);
+
+  const handleAdjustStock = async (product: Product, delta: number) => {
+    const next = product.stock + delta;
+    if (next < 0) return;
+    try {
+      await updateProduct(product.id, { stock: next });
+    } catch {
+      setAlert({ type: 'error', message: 'Error al ajustar stock' });
+    }
+  };
 
   const handleCreateProduct = async (formData: any) => {
     try {
@@ -37,7 +59,8 @@ export default function InventoryPage() {
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (confirm('¿Estás seguro de que quieres eliminar este producto?')) {
+    const ok = await confirm({ title: 'Eliminar producto', message: '¿Seguro que quieres eliminar este producto? Esta acción no se puede deshacer.', confirmLabel: 'Eliminar' });
+    if (ok) {
       try {
         await deleteProduct(id);
         setAlert({ type: 'success', message: 'Producto eliminado' });
@@ -87,10 +110,31 @@ export default function InventoryPage() {
         <StockAlert products={products} />
         
         <div className="bg-white rounded-3xl border-2 border-gray-50 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
-            <h2 className="text-xl font-black text-gray-800">
-              Productos <span className="text-blue-600 ml-1">({products.length})</span>
-            </h2>
+          <div className="p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50 space-y-3">
+            <div className="flex justify-between items-center gap-3">
+              <h2 className="text-lg sm:text-xl font-black text-gray-800">
+                Productos <span className="text-blue-600 ml-1">({sortedProducts.length})</span>
+              </h2>
+              <div className="flex gap-1 bg-white rounded-xl p-1 border border-slate-100">
+                {([['name','A-Z'],['stock','Stock'],['price','Precio']] as const).map(([key,label]) => (
+                  <button
+                    key={key}
+                    onClick={() => setSortBy(key)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${sortBy===key ? 'bg-blue-600 text-white' : 'text-slate-400'}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {products.length > 0 && (
+              <Input
+                placeholder="🔍 Buscar producto..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                fullWidth
+              />
+            )}
           </div>
           <div className="p-2 sm:p-6">
             {loading ? (
@@ -109,11 +153,14 @@ export default function InventoryPage() {
                 products={sortedProducts}
                 onDelete={handleDeleteProduct}
                 onEdit={handleEdit}
+                onAdjustStock={handleAdjustStock}
               />
             )}
           </div>
         </div>
       </div>
+
+      <ConfirmDialog />
 
       <ProductForm
         isOpen={showForm}
