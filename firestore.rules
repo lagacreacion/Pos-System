@@ -8,17 +8,50 @@ service cloud.firestore {
     }
 
     // Función para verificar si el usuario es el dueño del documento
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+    function isOwner() {
+      return isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
-    // Regla para colecciones que tienen un campo 'userId'
-    match /{collectionName}/{docId} {
-      // Permitir crear si el userId del nuevo documento coincide con el del usuario autenticado
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      
-      // Permitir leer, actualizar o borrar si el userId del documento existente coincide
-      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    // Función para verificar si el nuevo documento pertenece al usuario
+    function isCreator() {
+      return isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Reglas para todas las colecciones del POS con campo 'userId'
+    match /products/{docId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isCreator();
+      allow update, delete: if isOwner();
+    }
+
+    match /customers/{docId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isCreator();
+      allow update, delete: if isOwner();
+    }
+
+    match /sales/{docId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isCreator();
+      allow update, delete: if isOwner();
+    }
+
+    match /debts/{docId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isCreator();
+      allow update, delete: if isOwner();
+    }
+
+    match /payments/{docId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isCreator();
+      allow update, delete: if isOwner();
+    }
+
+    match /promotions/{docId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isCreator();
+      allow update, delete: if isOwner();
     }
   }
 }
